@@ -13,7 +13,7 @@ export type Course = {
   level: string;
   duration_hours: number;
   lessons_count: number;
-  accent: "blue" | "orange" | "dark";
+  accent: "blue" | "orange" | "dark" | "green" | "purple";
   highlights: string[];
   price?: number;
   original_price?: number;

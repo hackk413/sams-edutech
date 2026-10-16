@@ -2,12 +2,14 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { CourseCard } from "@/components/course-card";
 import { Icon } from "@/components/icon";
+import { COURSES } from "@/lib/courses";
 import type { Course } from "@/lib/types";
 
 export default async function HomePage() {
   const supabase = await createClient();
   const { data } = await supabase.from("courses").select("*").order("created_at", { ascending: true }).limit(3);
-  const courses = (data ?? []) as Course[];
+  const dbCourses = (data ?? []) as Course[];
+  const courses = dbCourses.length >= 3 ? dbCourses : COURSES.slice(0, 3);
   const featured = courses[0];
 
   return (

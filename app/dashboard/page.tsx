@@ -9,6 +9,7 @@ import { UserAvatar } from "@/components/user-avatar";
 import { WeeklyAssessmentsTab } from "@/components/weekly-assessments-tab";
 import { averageProgress, clampProgress, completedCourses, inProgressCourses, recommendedCourses } from "@/lib/lms";
 import { getWeeklyAssessments, getSubmissions } from "@/lib/assessments";
+import { COURSES } from "@/lib/courses";
 import type { Enrollment, Course, Profile } from "@/lib/types";
 
 export default async function DashboardPage({
@@ -39,7 +40,8 @@ export default async function DashboardPage({
 
   const typedProfile = profile as Profile | null;
   const typedEnrollments = (enrollments ?? []) as unknown as Enrollment[];
-  const typedCourses = (courses ?? []) as Course[];
+  const dbCourses = (courses ?? []) as Course[];
+  const typedCourses = dbCourses.length >= 5 ? dbCourses : COURSES;
   const average = averageProgress(typedEnrollments);
   const completed = completedCourses(typedEnrollments);
   const active = inProgressCourses(typedEnrollments);

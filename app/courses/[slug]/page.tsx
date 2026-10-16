@@ -3,14 +3,12 @@ import { createClient } from "@/lib/supabase/server";
 import { EnrollButton } from "@/components/enroll-button";
 import { Icon } from "@/components/icon";
 import { getCourseSyllabus } from "@/lib/lms";
+import { COURSES, COURSE_PRICES, getCourseBySlug } from "@/lib/courses";
 import type { Course } from "@/lib/types";
 
-// Standard pricing map for courses
-const COURSE_PRICES: Record<string, { price: number; original: number }> = {
-  "cybersecurity-foundations": { price: 2999, original: 7999 },
-  "web-application-security": { price: 4499, original: 11999 },
-  "python-for-security": { price: 3499, original: 8999 },
-};
+export function generateStaticParams() {
+  return COURSES.map((course) => ({ slug: course.slug }));
+}
 
 export default async function CourseDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
@@ -20,7 +18,10 @@ export default async function CourseDetailPage({ params }: { params: Promise<{ s
     supabase.auth.getUser(),
   ]);
 
-  if (!course) {
+  const fallbackCourse = getCourseBySlug(slug);
+  const typedCourse = (course ? { ...fallbackCourse, ...(course as Course) } : fallbackCourse) as Course | undefined;
+
+  if (!typedCourse) {
     return (
       <main className="section">
         <div className="container">
@@ -35,8 +36,10 @@ export default async function CourseDetailPage({ params }: { params: Promise<{ s
     );
   }
 
-  const typedCourse = course as Course;
-  const pricing = COURSE_PRICES[typedCourse.slug] || { price: 2499, original: 6999 };
+  const pricing = COURSE_PRICES[typedCourse.slug] || {
+    price: typedCourse.price ?? 3499,
+    original: typedCourse.original_price ?? 9999,
+  };
   const syllabus = getCourseSyllabus(typedCourse.slug);
 
   let enrolled = false;

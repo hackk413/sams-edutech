@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { CourseCatalog } from "@/components/course-catalog";
+import { COURSES } from "@/lib/courses";
 import type { Course } from "@/lib/types";
 
 export default async function CoursesPage() {
@@ -16,7 +17,18 @@ export default async function CoursesPage() {
       .eq("user_id", user.id);
     enrolledIds = (enrollments ?? []).map((item) => item.course_id);
   }
-  const typedCourses = (courses ?? []) as Course[];
+
+  // Ensure the 5 canonical courses are always present and enriched
+  const coursesMap = new Map<string, Course>();
+  for (const c of COURSES) {
+    coursesMap.set(c.slug, c);
+  }
+  if (courses && courses.length) {
+    for (const c of courses as Course[]) {
+      coursesMap.set(c.slug, { ...coursesMap.get(c.slug), ...c });
+    }
+  }
+  const typedCourses = Array.from(coursesMap.values());
 
   return (
     <>

@@ -597,6 +597,8 @@ button { cursor: pointer; }
 .course-cover.blue   { background: linear-gradient(135deg, var(--blue) 0%, #2985F8 100%); }
 .course-cover.orange { background: linear-gradient(135deg, var(--orange) 0%, #fb923c 100%); }
 .course-cover.dark   { background: linear-gradient(135deg, #1b263b 0%, #2b3a55 100%); }
+.course-cover.green  { background: linear-gradient(135deg, #059669 0%, #10b981 100%); }
+.course-cover.purple { background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%); }
 
 .course-kicker { font-size: 10px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; opacity: 0.88; }
 .course-cover strong { font-size: 1.05rem; font-weight: 800; margin-top: 6px; letter-spacing: -0.02em; }
@@ -900,6 +902,8 @@ button { cursor: pointer; }
 .course-banner.blue   { background: linear-gradient(135deg, var(--blue), #2985F8); }
 .course-banner.orange { background: linear-gradient(135deg, var(--orange), #fb923c); }
 .course-banner.dark   { background: linear-gradient(135deg, #1b263b, #2b3a55); }
+.course-banner.green  { background: linear-gradient(135deg, #059669, #10b981); }
+.course-banner.purple { background: linear-gradient(135deg, #7c3aed, #a855f7); }
 .course-banner .banner-kicker { font-size: 11px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; opacity: 0.85; }
 .course-banner h1 { margin: 8px 0 0; font-size: clamp(1.8rem, 3.5vw, 2.8rem); font-weight: 800; line-height: 1.1; }
 .course-overview { padding-top: 22px; }

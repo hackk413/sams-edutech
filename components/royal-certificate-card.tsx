@@ -440,19 +440,12 @@ export function RoyalCertificateCard({
   userId,
   completedCount = 1,
 }: RoyalCertificateCardProps) {
-  const [copied, setCopied] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
 
   const verificationHash = generateVerificationHash(userId);
   const certId = `SAMS-2026-${userId.slice(0, 6).toUpperCase()}`;
   const issueDate = "October 8, 2026";
   const formalName = formatRecipientName(displayName);
-
-  function copyHash() {
-    navigator.clipboard.writeText(verificationHash);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2200);
-  }
 
   return (
     <>
@@ -498,7 +491,7 @@ export function RoyalCertificateCard({
           </div>
         </div>
 
-        {/* Credential Details & Verification Hash Bar */}
+        {/* Credential Recipient Details */}
         <div className="royal-cert-details-block">
           <div className="royal-cert-details-row">
             <div>
@@ -510,25 +503,6 @@ export function RoyalCertificateCard({
                 {completedCount} Milestone{completedCount > 1 ? "s" : ""}
               </span>
             )}
-          </div>
-
-          <div className="royal-cert-hash-bar">
-            <div className="royal-cert-hash-header">
-              <span className="royal-hash-title">
-                <Icon name="shield" size={12} />
-                CRYPTOGRAPHIC VERIFICATION HASH
-              </span>
-              <button
-                type="button"
-                className="royal-copy-pill-btn"
-                onClick={copyHash}
-                title="Copy genuine cryptographic hash"
-              >
-                <Icon name={copied ? "check" : "copy"} size={11} />
-                <span>{copied ? "Copied" : "Copy"}</span>
-              </button>
-            </div>
-            <code className="royal-cert-hash-snippet">{verificationHash}</code>
           </div>
         </div>
 
@@ -610,8 +584,10 @@ export function RoyalCertificateCard({
                 <code>{certId}</code>
               </div>
               <div className="royal-footer-sec-item">
-                <span>AUTHENTICATION HASH:</span>
-                <code>{verificationHash}</code>
+                <span>STATUS:</span>
+                <span className="status-badge-verified" style={{ fontSize: "0.78rem", padding: "2px 8px" }}>
+                  <Icon name="check" size={10} /> Certified &amp; Tamper-Proof
+                </span>
               </div>
             </div>
           </div>

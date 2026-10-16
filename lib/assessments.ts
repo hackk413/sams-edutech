@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { createClient } from "@/lib/supabase/server";
 import { encryptSensitiveText, decryptSensitiveText } from "@/lib/crypto";
+import { COURSES } from "@/lib/courses";
 import type {
   WeeklyAssessment,
   AssessmentSubmission,
@@ -369,7 +370,10 @@ export async function getStudentProfilesAdmin(): Promise<StudentProfileAdminView
       getSubmissions(),
     ]);
 
-    const coursesMap = new Map((courses || []).map((c: Course) => [c.id, c.title]));
+    const coursesMap = new Map<string, string>(COURSES.map((c) => [c.id, c.title]));
+    for (const c of (courses || []) as Course[]) {
+      coursesMap.set(c.id, c.title);
+    }
     const studentProfiles: StudentProfileAdminView[] = [];
 
     // Map each profile
@@ -423,49 +427,49 @@ export async function getStudentProfilesAdmin(): Promise<StudentProfileAdminView
       created_at: new Date(Date.now() - 1000 * 60 * 60 * 24 * 14).toISOString(),
       enrollments_count: 2,
       enrolled_courses: [
-        { id: "c1", title: "Cybersecurity Foundations", progress: 85 },
-        { id: "c2", title: "Web Application Security", progress: 42 },
+        { id: "11111111-1111-4111-8111-111111111111", title: "Cybersecurity & SOC Operations (Level 1/2 Analyst)", progress: 85 },
+        { id: "55555555-5555-4555-8555-555555555555", title: "Full Stack Web & Cloud Engineering (Next.js, Node & Cloud)", progress: 42 },
       ],
       submissions_count: submissions.length,
       graded_count: submissions.filter((s) => s.status === "graded").length,
       average_score: 92,
-      mentor_notes: "Strong network packet analysis skills. Working through OWASP Week 2.",
+      mentor_notes: "Strong network packet analysis skills. Working through SOC operations.",
     },
     {
       id: "student-priya-sharma",
       full_name: "Priya Sharma",
       email: "priya.sharma@student.samsedutech.in",
       username: "priya_sec",
-      bio: "Software Engineer transitioning to DevSecOps & Defensive Engineering.",
+      bio: "Software Engineer transitioning to AI Engineering & Autonomous Agents.",
       avatar_url: null,
       role: "student",
       created_at: new Date(Date.now() - 1000 * 60 * 60 * 24 * 22).toISOString(),
       enrollments_count: 1,
       enrolled_courses: [
-        { id: "c1", title: "Python for Security", progress: 100 },
+        { id: "33333333-3333-4333-8333-333333333333", title: "Generative AI, Large Language Models & Autonomous Agents", progress: 100 },
       ],
       submissions_count: 3,
       graded_count: 3,
       average_score: 96,
-      mentor_notes: "Completed Python security track with distinction. Royal certificate claimed.",
+      mentor_notes: "Completed Generative AI track with distinction. Royal certificate claimed.",
     },
     {
       id: "student-rohan-verma",
       full_name: "Rohan Verma",
       email: "rohan.verma@student.samsedutech.in",
       username: "rohan_v",
-      bio: "Computer Science undergraduate eager to build production security tools.",
+      bio: "Data Science undergraduate eager to build production ML pipelines.",
       avatar_url: null,
       role: "student",
       created_at: new Date(Date.now() - 1000 * 60 * 60 * 24 * 7).toISOString(),
       enrollments_count: 1,
       enrolled_courses: [
-        { id: "c1", title: "Cybersecurity Foundations", progress: 60 },
+        { id: "22222222-2222-4222-8222-222222222222", title: "Applied Data Science & Advanced Analytics", progress: 60 },
       ],
       submissions_count: 1,
       graded_count: 1,
       average_score: 88,
-      mentor_notes: "Great pace on Week 1 reconnaissance lab.",
+      mentor_notes: "Great pace on Week 1 exploratory data analysis lab.",
     },
   ];
 }
