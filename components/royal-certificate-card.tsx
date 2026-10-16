@@ -160,6 +160,17 @@ function CertificateSvgDocument({
         <pattern id="certBeadDotV" x="0" y="0" width="6" height="8" patternUnits="userSpaceOnUse">
           <circle cx="3" cy="4" r="1.3" fill="#0c2340" />
         </pattern>
+
+        <style>{`
+          @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Great+Vibes&family=Pinyon+Script&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap');
+          .royal-recipient-text {
+            font-family: 'Pinyon Script', 'Great Vibes', 'Alex Brush', cursive;
+            font-size: 44px;
+            font-weight: 500;
+            fill: #0c2340;
+            letter-spacing: 0.5px;
+          }
+        `}</style>
       </defs>
 
       {/* ── Background & Outer Royal Navy Perimeter ── */}
@@ -263,21 +274,26 @@ function CertificateSvgDocument({
         PROUDLY PRESENTED TO
       </text>
 
-      {/* ── 4. Recipient Name (Calligraphic Script) ── */}
+      {/* ── 4. Recipient Name (Aesthetic Royal Calligraphic Script) ── */}
       <text
         x="340"
-        y="172"
+        y="170"
         textAnchor="middle"
-        fontFamily="'Great Vibes', 'Alex Brush', cursive"
-        fontSize="34"
-        fill="#0f3460"
+        className="royal-recipient-text"
+        fontFamily="'Pinyon Script', 'Great Vibes', 'Alex Brush', cursive"
+        fontSize="44"
+        fontWeight="500"
+        fill="#0c2340"
       >
         {formalName}
       </text>
 
-      {/* Decorative Divider with Diamond */}
-      <line x1="190" y1="184" x2="490" y2="184" stroke="#0c2340" strokeWidth="0.9" opacity="0.65" />
-      <polygon points="340,180 344,184 340,188 336,184" fill="#d4af37" />
+      {/* Decorative Royal Divider with Gold Diamond & Accent Filigree */}
+      <line x1="170" y1="184" x2="324" y2="184" stroke="#d4af37" strokeWidth="1.2" />
+      <circle cx="330" cy="184" r="1.5" fill="#0c2340" />
+      <polygon points="340,179 345,184 340,189 335,184" fill="#d4af37" />
+      <circle cx="350" cy="184" r="1.5" fill="#0c2340" />
+      <line x1="356" y1="184" x2="510" y2="184" stroke="#d4af37" strokeWidth="1.2" />
 
       {/* ── 5. Course Accreditation Body ── */}
       <text
@@ -438,14 +454,39 @@ export function RoyalCertificateCard({
   displayName,
   courseTitle = "Full-Stack Software Architecture & Systems",
   userId,
-  completedCount = 1,
 }: RoyalCertificateCardProps) {
   const [modalOpen, setModalOpen] = useState(false);
+  const [copiedLink, setCopiedLink] = useState(false);
 
   const verificationHash = generateVerificationHash(userId);
   const certId = `SAMS-2026-${userId.slice(0, 6).toUpperCase()}`;
   const issueDate = "October 8, 2026";
   const formalName = formatRecipientName(displayName);
+
+  function copyShareLink() {
+    if (typeof window === "undefined") return;
+    const shareUrl = `${window.location.origin}/courses`;
+    navigator.clipboard.writeText(shareUrl);
+    setCopiedLink(true);
+    setTimeout(() => setCopiedLink(false), 2200);
+  }
+
+  function downloadSvg() {
+    if (typeof document === "undefined") return;
+    const svgEl = document.querySelector(".royal-modal-cert-wrap svg");
+    if (!svgEl) return;
+    const serializer = new XMLSerializer();
+    const source = serializer.serializeToString(svgEl);
+    const blob = new Blob([source], { type: "image/svg+xml;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `SAMS_Certificate_${formalName.replace(/\s+/g, "_")}.svg`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  }
 
   return (
     <>
@@ -491,22 +532,7 @@ export function RoyalCertificateCard({
           </div>
         </div>
 
-        {/* Credential Recipient Details */}
-        <div className="royal-cert-details-block">
-          <div className="royal-cert-details-row">
-            <div>
-              <span className="royal-cert-sub-label">HONORING:</span>
-              <strong className="royal-cert-recipient-name">{formalName}</strong>
-            </div>
-            {completedCount > 0 && (
-              <span className="royal-milestone-tag">
-                {completedCount} Milestone{completedCount > 1 ? "s" : ""}
-              </span>
-            )}
-          </div>
-        </div>
-
-        {/* Card CTA Actions */}
+        {/* Card CTA Actions - Directly below certificate with zero clutter */}
         <div className="royal-cert-btn-row">
           <button
             type="button"
@@ -547,7 +573,25 @@ export function RoyalCertificateCard({
                   title="Print or Save as High-Resolution PDF"
                 >
                   <Icon name="upload" size={14} style={{ transform: "rotate(180deg)" }} />
-                  <span>Print / Save PDF</span>
+                  <span>Print / PDF</span>
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-secondary btn-sm"
+                  onClick={downloadSvg}
+                  title="Download vector SVG certificate file"
+                >
+                  <Icon name="download" size={14} />
+                  <span>Download SVG</span>
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-secondary btn-sm"
+                  onClick={copyShareLink}
+                  title="Copy verification share link"
+                >
+                  <Icon name={copiedLink ? "check" : "copy"} size={14} />
+                  <span>{copiedLink ? "Copied!" : "Share Link"}</span>
                 </button>
                 <button
                   type="button"

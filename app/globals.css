@@ -198,25 +198,27 @@ button { cursor: pointer; }
 /* Exact color blocks placement matching uploaded image (top right of SAMS) */
 .brand-pixel-cluster {
   position: absolute;
-  top: 1px;
-  right: 0px;
+  top: 2px;
+  right: -1px;
   display: grid;
-  grid-template-columns: repeat(2, 5px);
-  grid-template-rows: repeat(2, 5px);
-  gap: 2px;
+  grid-template-columns: repeat(2, 3px);
+  grid-template-rows: repeat(2, 3px);
+  gap: 1.2px;
   pointer-events: none;
 }
 .brand-size-small .brand-pixel-cluster {
+  grid-template-columns: repeat(2, 2.2px);
+  grid-template-rows: repeat(2, 2.2px);
+  gap: 1px;
+  top: 1.5px;
+  right: -1px;
+}
+.brand-size-large .brand-pixel-cluster {
   grid-template-columns: repeat(2, 4px);
   grid-template-rows: repeat(2, 4px);
   gap: 1.5px;
-  right: -2px;
-}
-.brand-size-large .brand-pixel-cluster {
-  grid-template-columns: repeat(2, 6.5px);
-  grid-template-rows: repeat(2, 6.5px);
-  gap: 2.5px;
-  right: 2px;
+  top: 2px;
+  right: 0px;
 }
 
 .brand-pixel-cluster .px-block {
@@ -2266,6 +2268,50 @@ button { cursor: pointer; }
 }
 .nav-link-admin:hover {
   background: rgba(249, 115, 22, 0.2) !important;
+}
+
+/* ── DIPLOMA HIGH-DEFINITION PRINT STYLES ── */
+@media print {
+  body * {
+    visibility: hidden !important;
+  }
+  .royal-modal-cert-wrap,
+  .royal-modal-cert-wrap * {
+    visibility: visible !important;
+  }
+  .royal-modal-cert-wrap {
+    position: fixed !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    background: white !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    z-index: 999999 !important;
+  }
+  .royal-modal-backdrop,
+  .royal-modal-container {
+    background: transparent !important;
+    box-shadow: none !important;
+    border: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+  .royal-modal-header-bar,
+  .royal-modal-footer-bar,
+  .site-shell header,
+  .site-shell footer,
+  .cursor-follower {
+    display: none !important;
+  }
+  @page {
+    size: landscape;
+    margin: 8mm;
+  }
 }
 
 
