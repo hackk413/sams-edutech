@@ -1,0 +1,22 @@
+version: "3.8"
+
+services:
+  sams-edutech:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: sams_edutech_lms
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL}
+      - NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=${NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY}
+      - ADMIN_ACCESS_KEY=${ADMIN_ACCESS_KEY:-sams-edutech-admin-2026-secure-key}
+      - ADMIN_SECRET_KEY=${ADMIN_SECRET_KEY}
+    volumes:
+      - sams_data:/app/data
+
+volumes:
+  sams_data:
