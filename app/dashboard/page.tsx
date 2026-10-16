@@ -244,13 +244,6 @@ export default async function DashboardPage({
               <div className="side-metric"><span>Submitted labs</span><strong>{studentSubmissions.length}</strong></div>
               <div className="side-metric"><span>Average progress</span><strong>{average}%</strong></div>
             </div>
-
-            <div className="card side-card" style={{ background: "var(--blue-soft)" }}>
-              <div className="story-point-icon"><Icon name="spark" /></div>
-              <h3 style={{ marginTop: 12 }}>Admin &amp; Mentor Support</h3>
-              <p>Weekly assessments are graded by senior engineering mentors with verified feedback.</p>
-              <Link className="btn btn-secondary" href="/admin">Visit Admin Console</Link>
-            </div>
           </aside>
         </div>
       </div>

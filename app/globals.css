@@ -176,49 +176,47 @@ button { cursor: pointer; }
 }
 
 .brand-row-sams {
-  display: flex; align-items: center;
+  display: inline-flex;
+  align-items: flex-start;
+  gap: 2.5px; /* Immediately adjacent to the last letter "S" of SAMS */
   line-height: 1;
 }
 
 .brand-sams-text {
-  position: relative;
   font-family: var(--font-manrope), 'Arial Black', sans-serif;
   font-weight: 900;
   font-size: 1.45rem;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.04em;
   color: #1A6FE8;
   background: linear-gradient(135deg, #1A6FE8 0%, #0284c7 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
-  display: inline-flex;
-  align-items: flex-start;
-  padding-right: 18px; /* space for the top-right pixel cluster */
+  line-height: 1;
+  padding-right: 0;
+  margin: 0;
 }
 
-/* Exact color blocks placement matching uploaded image (top right of SAMS) */
+/* Exact color blocks placement matching uploaded image (beside last letter "S" of SAMS) */
 .brand-pixel-cluster {
-  position: absolute;
-  top: 2px;
-  right: -1px;
   display: grid;
   grid-template-columns: repeat(2, 3px);
   grid-template-rows: repeat(2, 3px);
   gap: 1.2px;
+  margin-top: 2px; /* Aligns to upper shoulder of the letter S */
+  flex-shrink: 0;
   pointer-events: none;
 }
 .brand-size-small .brand-pixel-cluster {
   grid-template-columns: repeat(2, 2.2px);
   grid-template-rows: repeat(2, 2.2px);
   gap: 1px;
-  top: 1.5px;
-  right: -1px;
+  margin-top: 1.5px;
 }
 .brand-size-large .brand-pixel-cluster {
-  grid-template-columns: repeat(2, 4px);
-  grid-template-rows: repeat(2, 4px);
+  grid-template-columns: repeat(2, 3.8px);
+  grid-template-rows: repeat(2, 3.8px);
   gap: 1.5px;
-  top: 2px;
-  right: 0px;
+  margin-top: 2.5px;
 }
 
 .brand-pixel-cluster .px-block {

@@ -63,13 +63,13 @@ export function BrandLogo({
             style={{ fontSize: samsFontSizes[size] }}
           >
             SAMS
-            {/* Color blocks cluster placed at the top-right of the logo, exactly as in uploaded branding */}
-            <span className="brand-pixel-cluster" aria-hidden="true">
-              <span className="px-block px-orange" />
-              <span className="px-block px-blue" />
-              <span className="px-block px-blue" />
-              <span className="px-block px-orange" />
-            </span>
+          </span>
+          {/* Color blocks cluster placed immediately beside the last letter S of SAMS */}
+          <span className="brand-pixel-cluster" aria-hidden="true">
+            <span className="px-block px-orange" />
+            <span className="px-block px-blue" />
+            <span className="px-block px-blue" />
+            <span className="px-block px-orange" />
           </span>
         </div>
 
