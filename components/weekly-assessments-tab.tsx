@@ -142,65 +142,35 @@ export function WeeklyAssessmentsTab({
   if (!hasEnrollments) {
     return (
       <div className="weekly-assessments-hub">
-        <div className="card empty-state zero-enrollment-card" style={{ padding: "48px 24px", textAlign: "center" }}>
-          <div
-            className="empty-icon"
-            style={{
-              margin: "0 auto 16px",
-              width: 58,
-              height: 58,
-              borderRadius: "50%",
-              background: "var(--blue-soft)",
-              display: "grid",
-              placeItems: "center",
-              color: "var(--blue)",
-            }}
-          >
+        <div className="card empty-state zero-enrollment-card">
+          <div className="empty-icon zero-enrollment-icon">
             <Icon name="lock" size={26} />
           </div>
-          <h2 style={{ fontSize: "1.45rem", fontWeight: 800, margin: "0 0 10px", color: "var(--ink)" }}>
+          <h2 className="zero-enrollment-title">
             Weekly Assignments &amp; Marks are Course-Specific
           </h2>
-          <p
-            style={{
-              maxWidth: 580,
-              margin: "0 auto 24px",
-              color: "var(--muted)",
-              fontSize: "0.92rem",
-              lineHeight: 1.65,
-            }}
-          >
+          <p className="zero-enrollment-desc">
             Weekly practical engineering deliverables, hands-on labs, and instructor evaluations are tailored specifically to your enrolled track. Enroll in one of our 5 specialized career tracks to unlock your cohort curriculum and start earning verified marks.
           </p>
-          <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
-            <Link href="/courses" className="btn btn-orange">
-              Explore 5 Specialized Programs &amp; Enroll <Icon name="arrow" size={15} />
+          <div className="zero-enrollment-actions">
+            <Link href="/courses" className="btn btn-orange zero-enrollment-btn">
+              <span>Explore 5 Career Tracks &amp; Enroll</span>
+              <Icon name="arrow" size={15} />
             </Link>
           </div>
 
-          <div
-            className="locked-features-preview"
-            style={{
-              marginTop: 36,
-              paddingTop: 24,
-              borderTop: "1px solid var(--line)",
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-              gap: 16,
-              textAlign: "left",
-            }}
-          >
+          <div className="locked-features-preview">
             <div className="feat-mini-box">
-              <strong style={{ display: "block", fontSize: "0.86rem", color: "var(--ink)" }}>🎯 Course-Specific Labs</strong>
-              <span style={{ fontSize: "0.78rem", color: "var(--muted)" }}>Tailored weekly challenges matching your exact specialization</span>
+              <strong>🎯 Course-Specific Labs</strong>
+              <span>Tailored weekly challenges matching your exact specialization</span>
             </div>
             <div className="feat-mini-box">
-              <strong style={{ display: "block", fontSize: "0.86rem", color: "var(--ink)" }}>💻 GitHub Submissions</strong>
-              <span style={{ fontSize: "0.78rem", color: "var(--muted)" }}>Push real code repos &amp; receive code review feedback</span>
+              <strong>💻 GitHub Submissions</strong>
+              <span>Push real code repos &amp; receive code review feedback</span>
             </div>
             <div className="feat-mini-box">
-              <strong style={{ display: "block", fontSize: "0.86rem", color: "var(--ink)" }}>🏆 Certified Marks &amp; GPA</strong>
-              <span style={{ fontSize: "0.78rem", color: "var(--muted)" }}>Scores out of 100 with official instructor grading</span>
+              <strong>🏆 Certified Marks &amp; GPA</strong>
+              <span>Scores out of 100 with official instructor grading</span>
             </div>
           </div>
         </div>

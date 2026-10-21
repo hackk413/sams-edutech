@@ -6,9 +6,9 @@ export function CourseCard({ course, enrolled = false, featured = false }: { cou
   return (
     <article className={`card course-card ${featured ? "featured-course" : ""}`}>
       <div className={`course-cover ${course.accent}`}>
-        <div>
+        <div className="course-cover-headings">
           <span className="course-kicker">{course.category}</span>
-          <strong>{course.title}</strong>
+          <strong className="course-cover-title">{course.title}</strong>
         </div>
         <span className="level-pill">{course.level}</span>
       </div>

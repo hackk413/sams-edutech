@@ -20,18 +20,6 @@ export function BrandLogo({
   showSymbol = true,
   className = "",
 }: BrandLogoProps) {
-  const symbolHeights = {
-    small: "28px",
-    normal: "40px",
-    large: "52px",
-  };
-
-  const wordmarkHeights = {
-    small: "26px",
-    normal: "38px",
-    large: "50px",
-  };
-
   const content = (
     <div className={`brand-container brand-size-${size} ${className}`} aria-label="Sams Edutech">
       {showSymbol && (
@@ -41,7 +29,6 @@ export function BrandLogo({
             src="/symbol.png"
             alt="Sams Edutech Emblem"
             className="brand-symbol-img"
-            style={{ height: symbolHeights[size], width: "auto", objectFit: "contain" }}
           />
           <div className="brand-divider" aria-hidden="true" />
         </>
@@ -53,7 +40,6 @@ export function BrandLogo({
         src="/sams-wordmark.png"
         alt="Sams Edutech"
         className="brand-wordmark-img"
-        style={{ height: wordmarkHeights[size], width: "auto", objectFit: "contain" }}
       />
     </div>
   );

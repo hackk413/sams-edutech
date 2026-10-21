@@ -139,20 +139,28 @@ export default async function DashboardPage({
             </div>
 
             {/* ── INTERACTIVE TAB SWITCHER (WEEKLY ASSESSMENTS vs ENROLLED PROGRAMS) ── */}
-            <div className="dashboard-tab-bar" style={{ margin: "22px 0 16px", display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+            <div className="dashboard-tab-bar" role="tablist" aria-label="Dashboard views">
               <Link
                 href="/dashboard?tab=assessments"
-                className={`btn ${currentTab === "assessments" ? "btn-orange" : "btn-secondary"} btn-sm`}
-                style={{ borderRadius: "8px" }}
+                role="tab"
+                aria-selected={currentTab === "assessments"}
+                className={`dashboard-tab-btn ${currentTab === "assessments" ? "active" : ""}`}
               >
-                <Icon name="target" size={15} /> Weekly Assessments &amp; Assignments ({enrolledCourses.length > 0 ? studentAssessments.length : 0})
+                <Icon name="target" size={16} />
+                <span className="tab-title-full">Weekly Assessments</span>
+                <span className="tab-title-short">Assessments</span>
+                <span className="tab-count-badge">{enrolledCourses.length > 0 ? studentAssessments.length : 0}</span>
               </Link>
               <Link
                 href="/dashboard?tab=courses"
-                className={`btn ${currentTab === "courses" ? "btn-orange" : "btn-secondary"} btn-sm`}
-                style={{ borderRadius: "8px" }}
+                role="tab"
+                aria-selected={currentTab === "courses"}
+                className={`dashboard-tab-btn ${currentTab === "courses" ? "active" : ""}`}
               >
-                <Icon name="book" size={15} /> My Enrolled Programs ({typedEnrollments.length})
+                <Icon name="book" size={16} />
+                <span className="tab-title-full">Enrolled Programs</span>
+                <span className="tab-title-short">Programs</span>
+                <span className="tab-count-badge">{typedEnrollments.length}</span>
               </Link>
             </div>
 

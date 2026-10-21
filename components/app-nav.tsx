@@ -56,7 +56,7 @@ export async function AppNav() {
                 />
                 <span className="desktop-only">{name.split(" ")[0]}</span>
               </Link>
-              <LogoutButton />
+              <LogoutButton className="btn btn-ghost desktop-only" />
             </>
           ) : (
             <>
@@ -76,7 +76,13 @@ export async function AppNav() {
               <Link href="/courses"><Icon name="book" size={16} />Programs</Link>
               {user && <Link href="/profile"><Icon name="user" size={16} />Profile</Link>}
               <Link href="/admin"><Icon name="shield" size={16} />Admin Command Center</Link>
-              {!user && <Link href="/auth/login"><Icon name="lock" size={16} />Sign in</Link>}
+              {!user ? (
+                <Link href="/auth/login"><Icon name="lock" size={16} />Sign in</Link>
+              ) : (
+                <div className="mobile-menu-logout-wrapper">
+                  <LogoutButton className="mobile-menu-logout-btn" />
+                </div>
+              )}
             </div>
           </details>
         </div>

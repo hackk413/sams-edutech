@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Icon } from "@/components/icon";
 
-export function LogoutButton() {
+export function LogoutButton({ className = "btn btn-ghost" }: { className?: string }) {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
@@ -18,7 +18,7 @@ export function LogoutButton() {
   }
 
   return (
-    <button className="btn btn-ghost" onClick={logout} disabled={loading} aria-label="Sign out">
+    <button className={className} onClick={logout} disabled={loading} aria-label="Sign out">
       <Icon name="logout" size={16}/>{loading ? "Signing out" : "Sign out"}
     </button>
   );
