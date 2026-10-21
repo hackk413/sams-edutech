@@ -159,18 +159,15 @@ export function WeeklyAssessmentsTab({
             </Link>
           </div>
 
-          <div className="locked-features-preview">
-            <div className="feat-mini-box">
-              <strong>🎯 Course-Specific Labs</strong>
-              <span>Tailored weekly challenges matching your exact specialization</span>
-            </div>
-            <div className="feat-mini-box">
-              <strong>💻 GitHub Submissions</strong>
-              <span>Push real code repos &amp; receive code review feedback</span>
-            </div>
-            <div className="feat-mini-box">
-              <strong>🏆 Certified Marks &amp; GPA</strong>
-              <span>Scores out of 100 with official instructor grading</span>
+          <div className="enrollment-motivation-card">
+            <p className="enrollment-callout-text">
+              ✨ Take the first step toward your tech career — <strong>enroll in an active specialization today</strong> to unlock hands-on weekly assignments, personal code reviews, and verifiable marks!
+            </p>
+            <div className="enrollment-quote-box">
+              <blockquote className="enrollment-quote">
+                “The expert in anything was once a beginner. The secret to getting ahead is getting started, building consistently, and never stopping the curiosity to learn.”
+              </blockquote>
+              <span className="enrollment-quote-author">— Sams Edutech Mentorship</span>
             </div>
           </div>
         </div>
