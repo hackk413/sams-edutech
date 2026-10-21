@@ -59,9 +59,14 @@
 }
 
 * { box-sizing: border-box; }
-html { scroll-behavior: smooth; }
+html {
+  scroll-behavior: smooth;
+  max-width: 100%;
+  overflow-x: hidden;
+}
 body {
   margin: 0;
+  max-width: 100%;
   min-width: 320px;
   background: var(--surface);
   color: var(--ink-secondary);
@@ -985,6 +990,10 @@ button { cursor: pointer; }
 @keyframes fadeInUp { from { opacity: 0; transform: translateY(22px); } to { opacity: 1; transform: translateY(0); } }
 .fade-in-up { animation: fadeInUp 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94) both; }
 
+/* ── RESPONSIVE NAVBAR LABELS ── */
+.desktop-cta-text { display: inline; }
+.mobile-cta-text { display: none; }
+
 /* ── HORIZONTAL COURSE CAROUSEL / TRACK ── */
 .horizontal-course-section {
   width: 100%;
@@ -1167,11 +1176,11 @@ button { cursor: pointer; }
 }
 
 @media (max-width: 768px) {
-  .container { width: min(100% - 28px, 1200px); }
-  .topbar { height: 72px; }
+  .container { width: min(100% - 24px, 1200px); }
+  .topbar { height: 68px; }
   .desktop-nav, .desktop-only { display: none !important; }
   .mobile-menu { display: block; }
-  .hero { padding: 48px 0; }
+  .hero { padding: 42px 0 36px; }
   .card-grid, .stats-grid { grid-template-columns: 1fr; }
   .stat-box { border-right: none; border-bottom: 1px solid var(--line); }
   .stat-box:last-child { border-bottom: none; }
@@ -1179,6 +1188,120 @@ button { cursor: pointer; }
   .section-header { flex-direction: column; align-items: flex-start; }
   .catalog-toolbar { grid-template-columns: 1fr; }
   .footer-brand-row, .footer-bottom-row { flex-direction: column; align-items: flex-start; }
+
+  /* Horizontal Track Mobile */
+  .horizontal-course-item {
+    flex: 0 0 82vw;
+    max-width: 340px;
+    min-width: 280px;
+  }
+  .horizontal-course-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  .horizontal-course-nav-group {
+    width: 100%;
+    justify-content: space-between;
+  }
+}
+
+@media (max-width: 640px) {
+  .desktop-cta-text { display: none; }
+  .mobile-cta-text { display: inline; }
+  .nav-cta-btn {
+    padding: 0 10px !important;
+    font-size: 0.8rem !important;
+    height: 36px !important;
+    min-height: 36px !important;
+    gap: 4px !important;
+  }
+  .brand-symbol-img { height: 32px !important; }
+  .brand-divider { height: 24px !important; }
+  .brand-wordmark-img { height: 28px !important; }
+  .brand-container { gap: 8px !important; }
+  .topbar { height: 62px !important; }
+  .nav { gap: 8px !important; }
+  .nav-actions { gap: 6px !important; }
+
+  /* Modal responsive on mobile */
+  .modal-backdrop {
+    padding: 10px !important;
+  }
+  .modal-card {
+    padding: 18px 14px !important;
+    border-radius: var(--radius-md) !important;
+  }
+  .royal-modal-backdrop {
+    padding: 10px !important;
+  }
+  .royal-modal-hd {
+    padding: 16px 12px !important;
+  }
+  .royal-modal-cert-scroll {
+    padding: 8px !important;
+  }
+
+  /* Dashboard Cards Responsive */
+  .assessments-kpi-banner {
+    padding: 18px 14px !important;
+  }
+  .assessment-card {
+    padding: 18px 14px !important;
+  }
+  .assessment-stat-pills {
+    width: 100%;
+    justify-content: space-between;
+  }
+  .stat-pill {
+    flex: 1;
+    min-width: 0;
+    padding: 8px 12px !important;
+  }
+  .stat-val {
+    font-size: 1.1rem !important;
+  }
+  .kpi-grid {
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 6px !important;
+  }
+  .kpi {
+    padding: 8px 6px !important;
+  }
+  .kpi .num {
+    font-size: 1.35rem !important;
+  }
+  .kpi .label {
+    font-size: 0.68rem !important;
+  }
+  .kpi .hint {
+    display: none !important;
+  }
+  .dashboard-tab-bar {
+    flex-direction: column !important;
+    align-items: stretch !important;
+  }
+  .dashboard-tab-bar .btn {
+    width: 100% !important;
+    justify-content: center !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .horizontal-course-item {
+    flex: 0 0 85vw;
+    max-width: 315px;
+    min-width: 255px;
+  }
+  .brand-symbol-img { height: 28px !important; }
+  .brand-divider { height: 20px !important; }
+  .brand-wordmark-img { height: 24px !important; }
+  .brand-container { gap: 6px !important; }
+  .theme-toggle { width: 34px !important; height: 34px !important; }
+  .mobile-menu summary { width: 34px !important; height: 34px !important; }
+  .welcome-top { flex-direction: column; align-items: flex-start; gap: 12px; }
+  .welcome-browse-btn { width: 100%; justify-content: center; }
+  .assessment-card-top { flex-direction: column; align-items: flex-start; gap: 8px; }
 }
 
 /* ═════════════════════════════════════════════════════════
