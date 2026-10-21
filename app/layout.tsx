@@ -1,4 +1,4 @@
-import type { Metadata, Viewport } from "next";
+import type { Metadata } from "next";
 import { Manrope } from "next/font/google";
 import { AppNav } from "@/components/app-nav";
 import { BrandLogo } from "@/components/brand-logo";
@@ -11,17 +11,6 @@ const manrope = Manrope({
   variable: "--font-manrope",
   display: "swap",
 });
-
-export const viewport: Viewport = {
-  width: "device-width",
-  initialScale: 1,
-  maximumScale: 5,
-  viewportFit: "cover",
-  themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#1A6FE8" },
-    { media: "(prefers-color-scheme: dark)", color: "#0B1120" },
-  ],
-};
 
 export const metadata: Metadata = {
   title: "SAMS EDUTECH — India's Premier Career Accelerator & Learning Platform",

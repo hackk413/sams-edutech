@@ -61,10 +61,8 @@ export async function AppNav() {
           ) : (
             <>
               <Link className="btn btn-ghost desktop-only" href="/auth/login">Sign in</Link>
-              <Link className="btn btn-orange nav-cta-btn" href="/auth/register">
-                <span className="desktop-cta-text">Start Learning</span>
-                <span className="mobile-cta-text">Enroll</span>
-                <Icon name="arrow" size={14} />
+              <Link className="btn btn-orange" href="/auth/register">
+                Start Learning <Icon name="arrow" size={15} />
               </Link>
             </>
           )}
