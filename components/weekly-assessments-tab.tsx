@@ -1,10 +1,18 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Icon } from "@/components/icon";
 import { displayDate, formatTimeRemaining } from "@/lib/utils";
 import type { WeeklyAssessment, AssessmentSubmission } from "@/lib/types";
+
+interface EnrolledCourseSummary {
+  id: string;
+  slug: string;
+  title: string;
+  category?: string;
+}
 
 interface WeeklyAssessmentsTabProps {
   assessments: WeeklyAssessment[];
@@ -12,6 +20,7 @@ interface WeeklyAssessmentsTabProps {
   studentId: string;
   studentName: string;
   studentEmail: string;
+  enrolledCourses?: EnrolledCourseSummary[];
 }
 
 export function WeeklyAssessmentsTab({
@@ -20,9 +29,11 @@ export function WeeklyAssessmentsTab({
   studentId,
   studentName,
   studentEmail,
+  enrolledCourses = [],
 }: WeeklyAssessmentsTabProps) {
   const router = useRouter();
   const [selectedWeek, setSelectedWeek] = useState<number | "all">("all");
+  const [selectedCourse, setSelectedCourse] = useState<string>("all");
   const [submittingAssessment, setSubmittingAssessment] = useState<WeeklyAssessment | null>(null);
 
   // Form states
@@ -33,21 +44,35 @@ export function WeeklyAssessmentsTab({
   const [formError, setFormError] = useState("");
   const [formSuccess, setFormSuccess] = useState("");
 
+  // Zero enrollment condition: Student has not enrolled in any program yet
+  const hasEnrollments = enrolledCourses.length > 0;
+
   // Map submissions by assessment_id
   const submissionMap = new Map<string, AssessmentSubmission>();
   for (const s of submissions) {
     submissionMap.set(s.assessment_id, s);
   }
 
-  // Filter assessments
-  const filtered = selectedWeek === "all"
+  // Filter assessments by course first, then by week
+  const courseFiltered = selectedCourse === "all"
     ? assessments
-    : assessments.filter((a) => a.week_number === selectedWeek);
+    : assessments.filter(
+        (a) =>
+          a.course_id === selectedCourse ||
+          a.slug.includes(selectedCourse) ||
+          a.course_title.toLowerCase().includes(selectedCourse.toLowerCase())
+      );
+
+  const filtered = selectedWeek === "all"
+    ? courseFiltered
+    : courseFiltered.filter((a) => a.week_number === selectedWeek);
 
   // Compute metrics
   const total = assessments.length;
-  const submittedCount = submissions.length;
-  const gradedList = submissions.filter((s) => s.status === "graded" && typeof s.score === "number");
+  const submittedCount = submissions.filter((s) => assessments.some((a) => a.id === s.assessment_id)).length;
+  const gradedList = submissions.filter(
+    (s) => s.status === "graded" && typeof s.score === "number" && assessments.some((a) => a.id === s.assessment_id)
+  );
   const gradedCount = gradedList.length;
   const totalScoreEarned = gradedList.reduce((sum, s) => sum + (s.score || 0), 0);
   const totalPossible = gradedList.reduce((sum, s) => {
@@ -111,22 +136,92 @@ export function WeeklyAssessmentsTab({
   }
 
   // Weeks list for pill filter
-  const availableWeeks = Array.from(new Set(assessments.map((a) => a.week_number))).sort((a, b) => a - b);
+  const availableWeeks = Array.from(new Set(courseFiltered.map((a) => a.week_number))).sort((a, b) => a - b);
+
+  // If user is not enrolled in any course: Show course enrollment guidance
+  if (!hasEnrollments) {
+    return (
+      <div className="weekly-assessments-hub">
+        <div className="card empty-state zero-enrollment-card" style={{ padding: "48px 24px", textAlign: "center" }}>
+          <div
+            className="empty-icon"
+            style={{
+              margin: "0 auto 16px",
+              width: 58,
+              height: 58,
+              borderRadius: "50%",
+              background: "var(--blue-soft)",
+              display: "grid",
+              placeItems: "center",
+              color: "var(--blue)",
+            }}
+          >
+            <Icon name="lock" size={26} />
+          </div>
+          <h2 style={{ fontSize: "1.45rem", fontWeight: 800, margin: "0 0 10px", color: "var(--ink)" }}>
+            Weekly Assignments &amp; Marks are Course-Specific
+          </h2>
+          <p
+            style={{
+              maxWidth: 580,
+              margin: "0 auto 24px",
+              color: "var(--muted)",
+              fontSize: "0.92rem",
+              lineHeight: 1.65,
+            }}
+          >
+            Weekly practical engineering deliverables, hands-on labs, and instructor evaluations are tailored specifically to your enrolled track. Enroll in one of our 5 specialized career tracks to unlock your cohort curriculum and start earning verified marks.
+          </p>
+          <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
+            <Link href="/courses" className="btn btn-orange">
+              Explore 5 Specialized Programs &amp; Enroll <Icon name="arrow" size={15} />
+            </Link>
+          </div>
+
+          <div
+            className="locked-features-preview"
+            style={{
+              marginTop: 36,
+              paddingTop: 24,
+              borderTop: "1px solid var(--line)",
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+              gap: 16,
+              textAlign: "left",
+            }}
+          >
+            <div className="feat-mini-box">
+              <strong style={{ display: "block", fontSize: "0.86rem", color: "var(--ink)" }}>🎯 Course-Specific Labs</strong>
+              <span style={{ fontSize: "0.78rem", color: "var(--muted)" }}>Tailored weekly challenges matching your exact specialization</span>
+            </div>
+            <div className="feat-mini-box">
+              <strong style={{ display: "block", fontSize: "0.86rem", color: "var(--ink)" }}>💻 GitHub Submissions</strong>
+              <span style={{ fontSize: "0.78rem", color: "var(--muted)" }}>Push real code repos &amp; receive code review feedback</span>
+            </div>
+            <div className="feat-mini-box">
+              <strong style={{ display: "block", fontSize: "0.86rem", color: "var(--ink)" }}>🏆 Certified Marks &amp; GPA</strong>
+              <span style={{ fontSize: "0.78rem", color: "var(--muted)" }}>Scores out of 100 with official instructor grading</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="weekly-assessments-hub">
-      {/* ── TOP KPI BANNER (Replaces old static progress bar) ── */}
+      {/* ── TOP KPI BANNER ── */}
       <div className="assessments-kpi-banner card">
         <div className="kpi-banner-header">
           <div>
             <div className="sec-eyebrow" style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
-              <span className="live-dot" /> Cohort Weekly Assignments
+              <span className="live-dot" /> Enrolled Cohort Weekly Assignments
             </div>
             <h2 style={{ margin: "4px 0 6px", fontSize: "1.35rem", fontWeight: 800 }}>
               Practical Engineering Assessments
             </h2>
             <p style={{ margin: 0, color: "var(--muted)", fontSize: "0.88rem" }}>
-              Work on hands-on weekly deliverables, submit your code for code review, and receive certified mentor evaluation.
+              Tailored to your enrolled programs. Work on hands-on deliverables, submit your code for review, and receive instructor marks.
             </p>
           </div>
           <div className="assessment-stat-pills">
@@ -154,22 +249,54 @@ export function WeeklyAssessmentsTab({
           </div>
           <div className="progress-meta" style={{ marginTop: 6, fontSize: "0.78rem" }}>
             <span>{submittedCount} of {total} weekly assignments submitted ({total > 0 ? Math.round((submittedCount / total) * 100) : 0}%)</span>
-            <span>{gradedCount} certified reviews completed</span>
+            <span>{gradedCount} certified instructor reviews completed</span>
           </div>
         </div>
       </div>
 
+      {/* ── COURSE TRACK FILTER BAR (If student is enrolled in multiple programs) ── */}
+      {enrolledCourses.length > 1 && (
+        <div className="course-filter-bar" style={{ margin: "18px 0 6px", display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+          <span style={{ fontSize: "0.82rem", fontWeight: 700, color: "var(--muted)" }}>Filter by Program:</span>
+          <button
+            type="button"
+            className={`filter-chip ${selectedCourse === "all" ? "active" : ""}`}
+            onClick={() => setSelectedCourse("all")}
+          >
+            All My Enrolled Programs ({assessments.length})
+          </button>
+          {enrolledCourses.map((c) => {
+            const count = assessments.filter(
+              (a) =>
+                a.course_id === c.id ||
+                a.course_id === c.slug ||
+                a.course_title.toLowerCase().includes(c.title.toLowerCase())
+            ).length;
+            return (
+              <button
+                key={c.id}
+                type="button"
+                className={`filter-chip ${selectedCourse === c.slug || selectedCourse === c.id ? "active" : ""}`}
+                onClick={() => setSelectedCourse(c.slug)}
+              >
+                {c.title.split("(")[0].trim()} ({count})
+              </button>
+            );
+          })}
+        </div>
+      )}
+
       {/* ── FILTER CHIPS BY WEEK ── */}
-      <div className="week-filter-bar" style={{ margin: "20px 0 16px", display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+      <div className="week-filter-bar" style={{ margin: "14px 0 16px", display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
         <button
           type="button"
           className={`filter-chip ${selectedWeek === "all" ? "active" : ""}`}
           onClick={() => setSelectedWeek("all")}
         >
-          All Weeks ({assessments.length})
+          All Weeks ({courseFiltered.length})
         </button>
         {availableWeeks.map((week) => {
-          const count = assessments.filter((a) => a.week_number === week).length;
+          const count = courseFiltered.filter((a) => a.week_number === week).length;
           return (
             <button
               key={week}
@@ -187,7 +314,7 @@ export function WeeklyAssessmentsTab({
       {filtered.length === 0 ? (
         <div className="card empty-state" style={{ padding: 36, textAlign: "center" }}>
           <Icon name="target" size={32} />
-          <h3 style={{ marginTop: 12 }}>No weekly assessments published for this selection.</h3>
+          <h3 style={{ marginTop: 12 }}>No weekly assessments found for this selection.</h3>
           <p style={{ color: "var(--muted)", fontSize: "0.86rem" }}>Check back shortly or browse other weeks.</p>
         </div>
       ) : (
@@ -200,152 +327,145 @@ export function WeeklyAssessmentsTab({
 
             return (
               <article key={assessment.id} className="card assessment-card">
+                {/* Header Row */}
                 <div className="assessment-card-top">
                   <div className="assessment-badges-row">
                     <span className="badge-week">Week {assessment.week_number}</span>
+                    <span className="badge-course-track">{assessment.course_title}</span>
                     <span className="badge-difficulty">{assessment.difficulty}</span>
                     <span className="badge-points">{assessment.max_points} Points</span>
-                    <span className="badge-course-track">{assessment.course_title}</span>
                   </div>
-
                   <div className="assessment-deadline-pill">
-                    <Icon name="clock" size={13} />
+                    <Icon name="clock" size={14} />
                     <span className={deadline.overdue && !isSubmitted ? "text-danger" : ""}>
-                      {deadline.overdue && !isSubmitted ? `Deadline Passed (${deadline.label})` : deadline.label}
+                      Due: {displayDate(assessment.due_date)} &middot; {deadline.label}
                     </span>
                   </div>
                 </div>
 
-                <div className="assessment-body" style={{ marginTop: 14 }}>
-                  <h3 className="assessment-title" style={{ fontSize: "1.2rem", fontWeight: 800, margin: "0 0 8px" }}>
+                {/* Title & Description */}
+                <div style={{ marginTop: 14 }}>
+                  <h3 style={{ fontSize: "1.2rem", fontWeight: 800, margin: "0 0 8px", color: "var(--ink)" }}>
                     {assessment.title}
                   </h3>
-                  <p className="assessment-desc" style={{ color: "var(--ink-secondary)", fontSize: "0.9rem", lineHeight: 1.55 }}>
+                  <p style={{ margin: 0, color: "var(--muted)", fontSize: "0.9rem", lineHeight: 1.6 }}>
                     {assessment.description}
                   </p>
-
-                  {/* Objectives list */}
-                  {assessment.objectives && assessment.objectives.length > 0 && (
-                    <div className="assessment-section-box">
-                      <div className="box-title">Core Lab Objectives:</div>
-                      <ul className="objectives-list">
-                        {assessment.objectives.map((obj, i) => (
-                          <li key={i}>
-                            <Icon name="check" size={12} />
-                            <span>{obj}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-
-                  {/* Deliverables list */}
-                  {assessment.deliverables && assessment.deliverables.length > 0 && (
-                    <div className="assessment-section-box" style={{ marginTop: 10 }}>
-                      <div className="box-title">Required Deliverables:</div>
-                      <ul className="deliverables-list">
-                        {assessment.deliverables.map((deliv, i) => (
-                          <li key={i}>
-                            <Icon name="spark" size={12} />
-                            <span>{deliv}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-
-                  {/* Starter Repo if provided */}
-                  {assessment.starter_repo_url && (
-                    <div style={{ marginTop: 12 }}>
-                      <a
-                        href={assessment.starter_repo_url}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="btn btn-ghost btn-sm"
-                        style={{ display: "inline-flex", gap: 6, alignItems: "center" }}
-                      >
-                        <Icon name="arrow" size={13} /> Starter Lab Repository &rarr;
-                      </a>
-                    </div>
-                  )}
                 </div>
 
-                {/* ── SUBMISSION STATUS & ACTIONS FOOTER ── */}
-                <div className="assessment-card-footer" style={{ marginTop: 20, paddingTop: 16, borderTop: "1px solid var(--line)" }}>
-                  {isGraded && submission ? (
-                    <div className="graded-banner">
-                      <div className="graded-score-group">
-                        <div className="score-badge">
-                          <span className="score-num">{submission.score}</span>
-                          <span className="score-max">/{assessment.max_points}</span>
-                        </div>
-                        <div>
-                          <div className="grade-badge-pill">Grade {submission.grade || "A"} &bull; Verified</div>
-                          <div className="graded-date">Reviewed {displayDate(submission.graded_at)} by {submission.graded_by || "Head Mentor"}</div>
-                        </div>
-                      </div>
+                {/* Objectives */}
+                {assessment.objectives && assessment.objectives.length > 0 && (
+                  <div className="assessment-section-box">
+                    <strong style={{ display: "block", fontSize: "0.8rem", textTransform: "uppercase", letterSpacing: "0.05em", color: "var(--muted)", marginBottom: 6 }}>
+                      Key Engineering Objectives
+                    </strong>
+                    <ul style={{ margin: 0, paddingLeft: 18, fontSize: "0.86rem", color: "var(--ink-secondary)" }}>
+                      {assessment.objectives.map((obj, i) => (
+                        <li key={i} style={{ marginBottom: 4 }}>{obj}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
 
+                {/* Deliverables */}
+                {assessment.deliverables && assessment.deliverables.length > 0 && (
+                  <div className="assessment-section-box" style={{ marginTop: 10 }}>
+                    <strong style={{ display: "block", fontSize: "0.8rem", textTransform: "uppercase", letterSpacing: "0.05em", color: "var(--muted)", marginBottom: 6 }}>
+                      Required Deliverables
+                    </strong>
+                    <ul style={{ margin: 0, paddingLeft: 18, fontSize: "0.86rem", color: "var(--ink-secondary)" }}>
+                      {assessment.deliverables.map((del, i) => (
+                        <li key={i} style={{ marginBottom: 4 }}>{del}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {/* Starter Repo Link */}
+                {assessment.starter_repo_url && (
+                  <div style={{ marginTop: 12, display: "flex", alignItems: "center", gap: 8 }}>
+                    <Icon name="git-branch" size={15} />
+                    <span style={{ fontSize: "0.84rem", color: "var(--muted)" }}>Starter Laboratory Code:</span>
+                    <a
+                      href={assessment.starter_repo_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="assessment-repo-link"
+                      style={{ fontSize: "0.84rem", fontWeight: 700, color: "var(--blue)" }}
+                    >
+                      {assessment.starter_repo_url.replace("https://github.com/", "")} &rarr;
+                    </a>
+                  </div>
+                )}
+
+                {/* Submission & Grading Status Footer */}
+                <div className="assessment-footer-bar" style={{ marginTop: 18, paddingTop: 16, borderTop: "1px solid var(--line)" }}>
+                  {submission && isGraded ? (
+                    <div className="graded-summary-box">
+                      <div className="graded-header">
+                        <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                          <span className="grade-badge grade-badge-success">
+                            <Icon name="check" size={14} /> Evaluation Completed
+                          </span>
+                          <span className="grade-score-pill">
+                            Score: <strong>{submission.score}</strong> / {assessment.max_points}
+                          </span>
+                          {submission.grade && (
+                            <span className="grade-letter-pill">Grade: {submission.grade}</span>
+                          )}
+                        </div>
+                        <span style={{ fontSize: "0.76rem", color: "var(--muted)" }}>
+                          Graded on {displayDate(submission.graded_at || submission.submitted_at)}
+                        </span>
+                      </div>
                       {submission.feedback && (
-                        <div className="mentor-feedback-quote" style={{ marginTop: 12 }}>
-                          <div className="feedback-label">
-                            <Icon name="spark" size={13} /> Mentor Evaluation:
-                          </div>
-                          <p>{submission.feedback}</p>
+                        <div className="grade-feedback-text">
+                          <strong>Instructor Review &amp; Code Feedback:</strong>
+                          <p style={{ margin: "4px 0 0" }}>{submission.feedback}</p>
                         </div>
                       )}
-
-                      <div style={{ marginTop: 10, display: "flex", gap: 10, alignItems: "center" }}>
-                        <a
-                          href={submission.github_url}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="btn btn-secondary btn-sm"
-                        >
-                          View Submitted Code
+                      <div style={{ marginTop: 10, display: "flex", gap: 14, fontSize: "0.8rem" }}>
+                        <a href={submission.github_url} target="_blank" rel="noopener noreferrer" style={{ color: "var(--blue)", fontWeight: 700 }}>
+                          View Submitted Repository &rarr;
                         </a>
+                        {submission.demo_url && (
+                          <a href={submission.demo_url} target="_blank" rel="noopener noreferrer" style={{ color: "var(--blue)", fontWeight: 700 }}>
+                            View Demo Link &rarr;
+                          </a>
+                        )}
+                      </div>
+                    </div>
+                  ) : submission && isSubmitted ? (
+                    <div className="submitted-status-box">
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                          <span className="status-pill status-pill-pending">
+                            <span className="status-dot status-dot-pending" /> Under Review
+                          </span>
+                          <span style={{ fontSize: "0.84rem", color: "var(--muted)" }}>
+                            Submitted on {displayDate(submission.submitted_at)}
+                          </span>
+                        </div>
                         <button
                           type="button"
-                          className="btn btn-ghost btn-sm"
+                          className="btn btn-secondary btn-sm"
                           onClick={() => openSubmitModal(assessment)}
                         >
                           Update Submission
                         </button>
                       </div>
-                    </div>
-                  ) : submission ? (
-                    <div className="submitted-banner">
-                      <div className="submitted-status-row">
-                        <span className="status-badge-submitted">
-                          <Icon name="check" size={12} /> Submitted &bull; Awaiting Mentor Review
-                        </span>
-                        <span className="submitted-timestamp">
-                          Submitted on {displayDate(submission.submitted_at)}
-                        </span>
-                      </div>
-
-                      <div style={{ marginTop: 12, display: "flex", gap: 10, alignItems: "center" }}>
-                        <a
-                          href={submission.github_url}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="btn btn-secondary btn-sm"
-                        >
-                          View Solution
-                        </a>
-                        <button
-                          type="button"
-                          className="btn btn-ghost btn-sm"
-                          onClick={() => openSubmitModal(assessment)}
-                        >
-                          Resubmit Solution
-                        </button>
+                      <div style={{ marginTop: 8, fontSize: "0.8rem", color: "var(--muted)" }}>
+                        Repo: <a href={submission.github_url} target="_blank" rel="noopener noreferrer" style={{ color: "var(--blue)" }}>{submission.github_url}</a>
                       </div>
                     </div>
                   ) : (
-                    <div className="pending-banner">
-                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
-                        <div className="pending-notice">
-                          <Icon name="clock" size={14} /> Due: {displayDate(assessment.due_date)}
+                    <div className="unsubmitted-status-box">
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                          <span className="status-pill status-pill-unsubmitted">Not Submitted</span>
+                          <span style={{ fontSize: "0.84rem", color: "var(--muted)" }}>
+                            Pass threshold: {assessment.passing_points} pts
+                          </span>
                         </div>
                         <button
                           type="button"
@@ -374,6 +494,9 @@ export function WeeklyAssessmentsTab({
                 <h3 style={{ margin: "2px 0 0", fontSize: "1.2rem", fontWeight: 800 }}>
                   {submittingAssessment.title}
                 </h3>
+                <span style={{ fontSize: "0.82rem", color: "var(--blue)", fontWeight: 700 }}>
+                  {submittingAssessment.course_title}
+                </span>
               </div>
               <button
                 type="button"

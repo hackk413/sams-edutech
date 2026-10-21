@@ -9,13 +9,10 @@ interface BrandLogoProps {
 
 /**
  * Sams Edutech Official Logo Component
- * - Styled precisely to match the official corporate identity:
- *   1. Double-curved blue ribbon emblem with pixel accents on left
- *   2. Orange vertical divider
- *   3. Modern bold blue "SAMS" wordmark
- *   4. Pixel color-block grid (orange & blue) placed precisely at the top-right of SAMS
- *   5. Clean uppercase "EDUTECH" subline in vibrant orange
- *   6. NO laptop icon beside the wordmark
+ * - Uses the official emblem (/symbol.png)
+ * - Followed by the vertical divider line
+ * - Followed by the official transparent PNG wordmark (/sams-wordmark.png)
+ * - Perfectly scaled and aligned across mobile, tablet, and desktop
  */
 export function BrandLogo({
   href = "/",
@@ -24,21 +21,15 @@ export function BrandLogo({
   className = "",
 }: BrandLogoProps) {
   const symbolHeights = {
-    small: "34px",
-    normal: "48px",
-    large: "60px",
+    small: "28px",
+    normal: "40px",
+    large: "52px",
   };
 
-  const samsFontSizes = {
-    small: "1.15rem",
-    normal: "1.45rem",
-    large: "1.85rem",
-  };
-
-  const edutechFontSizes = {
-    small: "0.52rem",
-    normal: "0.64rem",
-    large: "0.80rem",
+  const wordmarkHeights = {
+    small: "26px",
+    normal: "38px",
+    large: "50px",
   };
 
   const content = (
@@ -56,30 +47,14 @@ export function BrandLogo({
         </>
       )}
 
-      <div className="brand-wordmark">
-        <div className="brand-row-sams">
-          <span
-            className="brand-sams-text"
-            style={{ fontSize: samsFontSizes[size] }}
-          >
-            SAMS
-          </span>
-          {/* Color blocks cluster placed immediately beside the last letter S of SAMS */}
-          <span className="brand-pixel-cluster" aria-hidden="true">
-            <span className="px-block px-orange" />
-            <span className="px-block px-blue" />
-            <span className="px-block px-blue" />
-            <span className="px-block px-orange" />
-          </span>
-        </div>
-
-        <div
-          className="brand-row-edutech"
-          style={{ fontSize: edutechFontSizes[size] }}
-        >
-          EDUTECH
-        </div>
-      </div>
+      {/* Official SAMS EDUTECH Wordmark PNG Graphic */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src="/sams-wordmark.png"
+        alt="Sams Edutech"
+        className="brand-wordmark-img"
+        style={{ height: wordmarkHeights[size], width: "auto", objectFit: "contain" }}
+      />
     </div>
   );
 

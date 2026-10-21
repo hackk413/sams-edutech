@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import type { Course } from "@/lib/types";
 import { CourseCard } from "@/components/course-card";
+import { HorizontalCourseTrack } from "@/components/horizontal-course-track";
 import { Icon } from "@/components/icon";
 
 const levels = ["All levels", "Beginner", "Intermediate", "Advanced"];
@@ -11,6 +12,7 @@ export function CourseCatalog({ courses, enrolledIds }: { courses: Course[]; enr
   const [query, setQuery] = useState("");
   const [level, setLevel] = useState("All levels");
   const [category, setCategory] = useState("All categories");
+  const [viewMode, setViewMode] = useState<"horizontal" | "grid">("horizontal");
   const enrolled = useMemo(() => new Set(enrolledIds), [enrolledIds]);
   const categories = useMemo(
     () => ["All categories", ...Array.from(new Set(courses.map((course) => course.category)))],
@@ -55,16 +57,43 @@ export function CourseCatalog({ courses, enrolledIds }: { courses: Course[]; enr
       </div>
 
       <div className="catalog-summary">
-        <div><strong>{filtered.length}</strong> course{filtered.length === 1 ? "" : "s"} available</div>
-        <div className="catalog-summary-muted">Self-paced &middot; Enroll free &middot; Learn at your pace</div>
+        <div>
+          <strong>{filtered.length}</strong> course{filtered.length === 1 ? "" : "s"} available &middot; <span className="catalog-summary-muted">Self-paced &middot; Enroll free</span>
+        </div>
+        <div className="view-mode-toggle" aria-label="View layout switcher">
+          <button
+            type="button"
+            className={`view-toggle-btn ${viewMode === "horizontal" ? "active" : ""}`}
+            onClick={() => setViewMode("horizontal")}
+            title="Horizontal scroll view (Recommended)"
+          >
+            <span>↔ Horizontal Track</span>
+          </button>
+          <button
+            type="button"
+            className={`view-toggle-btn ${viewMode === "grid" ? "active" : ""}`}
+            onClick={() => setViewMode("grid")}
+            title="Grid view"
+          >
+            <span>☷ Grid</span>
+          </button>
+        </div>
       </div>
 
       {filtered.length ? (
-        <div className="card-grid">
-          {filtered.map((course) => (
-            <CourseCard key={course.id} course={course} enrolled={enrolled.has(course.id)} />
-          ))}
-        </div>
+        viewMode === "horizontal" ? (
+          <HorizontalCourseTrack
+            courses={filtered}
+            enrolledIds={enrolled}
+            className="catalog-horizontal-section"
+          />
+        ) : (
+          <div className="card-grid">
+            {filtered.map((course) => (
+              <CourseCard key={course.id} course={course} enrolled={enrolled.has(course.id)} />
+            ))}
+          </div>
+        )
       ) : (
         <div className="card empty-state">
           <div className="empty-icon"><Icon name="search" size={22} /></div>

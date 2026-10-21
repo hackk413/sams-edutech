@@ -22,13 +22,16 @@ function ensureDataDir() {
   }
 }
 
-// ── STARTER REAL-WORLD WEEKLY ASSIGNMENTS ──
+// ── STARTER REAL-WORLD COURSE-SPECIFIC WEEKLY ASSIGNMENTS ──
 const INITIAL_ASSESSMENTS: WeeklyAssessment[] = [
+  // ────────────────────────────────────────────────────────────
+  // 1. Cybersecurity & SOC Operations (Level 1/2 Analyst)
+  // ────────────────────────────────────────────────────────────
   {
-    id: "wa-week-1-cyber",
+    id: "wa-cyber-w1",
     week_number: 1,
-    course_id: "all",
-    course_title: "Foundations & Security Track",
+    course_id: "cybersecurity-soc-operations",
+    course_title: "Cybersecurity & SOC Operations (Level 1/2 Analyst)",
     title: "Week 1: Threat Surface Mapping & Port Reconnaissance",
     slug: "week-1-threat-surface-mapping",
     description:
@@ -43,21 +46,21 @@ const INITIAL_ASSESSMENTS: WeeklyAssessment[] = [
       "Executive PDF or Markdown summary of findings with CVSS severity ratings",
       "Hardening recommendations for at least 3 discovered weaknesses",
     ],
-    due_date: new Date(Date.now() + 1000 * 60 * 60 * 24 * 4).toISOString(), // 4 days from now
+    due_date: new Date(Date.now() + 1000 * 60 * 60 * 24 * 4).toISOString(),
     max_points: 100,
     passing_points: 65,
     difficulty: "Beginner",
     status: "published",
-    starter_repo_url: "https://github.com/samsedutech-labs/week1-network-recon",
+    starter_repo_url: "https://github.com/samsedutech-labs/cyber-week1-recon",
     created_at: new Date(Date.now() - 1000 * 60 * 60 * 48).toISOString(),
     updated_at: new Date(Date.now() - 1000 * 60 * 60 * 48).toISOString(),
   },
   {
-    id: "wa-week-2-owasp",
+    id: "wa-cyber-w2",
     week_number: 2,
-    course_id: "all",
-    course_title: "Web Application Security",
-    title: "Week 2: OWASP Top 10 Injection & Broken Auth Lab",
+    course_id: "cybersecurity-soc-operations",
+    course_title: "Cybersecurity & SOC Operations (Level 1/2 Analyst)",
+    title: "Week 2: OWASP Top 10 Injection & Broken Access Control",
     slug: "week-2-owasp-top10-injection",
     description:
       "Deep dive into OWASP A03 (Injection) and A01 (Broken Access Control). Audit a deliberately vulnerable REST API endpoint, demonstrate SQL injection proof-of-concept (POC), and implement parameterized queries and JWT signature validation to neutralize the vector.",
@@ -76,35 +79,527 @@ const INITIAL_ASSESSMENTS: WeeklyAssessment[] = [
     passing_points: 70,
     difficulty: "Intermediate",
     status: "published",
-    starter_repo_url: "https://github.com/samsedutech-labs/week2-injection-mitigation",
+    starter_repo_url: "https://github.com/samsedutech-labs/cyber-week2-injection",
     created_at: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(),
     updated_at: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(),
   },
   {
-    id: "wa-week-3-automation",
+    id: "wa-cyber-w3",
     week_number: 3,
-    course_id: "all",
-    course_title: "Python Security Automation",
-    title: "Week 3: High-Throughput Log Parsing & Anomaly Detector",
-    slug: "week-3-log-parsing-anomaly-detection",
+    course_id: "cybersecurity-soc-operations",
+    course_title: "Cybersecurity & SOC Operations (Level 1/2 Analyst)",
+    title: "Week 3: SIEM Threat Hunting & Custom Sigma/YARA Rules",
+    slug: "week-3-siem-threat-hunting",
     description:
-      "Write an asynchronous Python CLI utility that ingests high-volume NGINX and Linux auth logs (100,000+ entries), extracts brute-force patterns using regex, flags suspicious IP clusters, and outputs a structured JSON report and Discord/Slack webhook alert.",
+      "Analyze enterprise Windows Event Logs (Sysmon) and Linux auditd logs. Identify lateral movement (Pass-the-Hash / PsExec) and craft production-ready Sigma and YARA rules mapped to MITRE ATT&CK T1021.002.",
     objectives: [
-      "Build a multi-threaded or AsyncIO log parsing engine in Python 3.11+",
-      "Detect failed SSH logins exceeding 10 attempts within a 60-second sliding window",
-      "Generate an RFC-compliant JSON threat artifact with geo-enrichment metadata",
+      "Ingest Sysmon Event ID 1 (Process Create) & 3 (Network Connect) into Splunk/Elastic",
+      "Correlate suspicious command lines (powershell -enc, certutil download)",
+      "Write and validate 2 Sigma detection rules with zero false positives on baseline traffic",
     ],
     deliverables: [
-      "GitHub repository link containing the Python utility with a clean README and pyproject.toml",
-      "Benchmark demonstrating processing 50k log lines in under 3 seconds",
-      "Example JSON threat alert artifact generated from sample log files",
+      "GitHub repository with tested Sigma rules (.yml) and test PCAP files",
+      "Investigation writeup following the SANS incident handler timeline format",
+      "Sigma CLI validation test log output",
     ],
     due_date: new Date(Date.now() + 1000 * 60 * 60 * 24 * 18).toISOString(),
     max_points: 100,
     passing_points: 75,
     difficulty: "Intermediate",
     status: "published",
-    starter_repo_url: "https://github.com/samsedutech-labs/week3-python-log-analyzer",
+    starter_repo_url: "https://github.com/samsedutech-labs/cyber-week3-siem-hunting",
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  },
+  {
+    id: "wa-cyber-w4",
+    week_number: 4,
+    course_id: "cybersecurity-soc-operations",
+    course_title: "Cybersecurity & SOC Operations (Level 1/2 Analyst)",
+    title: "Week 4: Incident Response & Ransomware Sandbox Forensics",
+    slug: "week-4-incident-response-ransomware",
+    description:
+      "Triage a live simulated ransomware outbreak. Extract memory dumps with Volatility 3, analyze registry persistence run keys, isolate compromised hosts, and generate a certified NIST SP 800-61 post-incident report.",
+    objectives: [
+      "Analyze infected memory image with Volatility 3 (windows.pslist, windows.netscan)",
+      "Extract malware C2 IP addresses and file hashes (SHA-256)",
+      "Publish an Executive Incident Response Report with actionable IOCs",
+    ],
+    deliverables: [
+      "Executive CIRT (Computer Incident Response Team) Incident Report (PDF/MD)",
+      "MISP / STIX format IOC export file (.json)",
+      "Memory analysis command logs and evidence screenshots",
+    ],
+    due_date: new Date(Date.now() + 1000 * 60 * 60 * 24 * 25).toISOString(),
+    max_points: 100,
+    passing_points: 80,
+    difficulty: "Advanced",
+    status: "published",
+    starter_repo_url: "https://github.com/samsedutech-labs/cyber-week4-forensics",
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  },
+
+  // ────────────────────────────────────────────────────────────
+  // 2. Applied Data Science & Advanced Analytics
+  // ────────────────────────────────────────────────────────────
+  {
+    id: "wa-ds-w1",
+    week_number: 1,
+    course_id: "applied-data-science",
+    course_title: "Applied Data Science & Advanced Analytics",
+    title: "Week 1: High-Performance Vectorized Wrangling with NumPy & Pandas",
+    slug: "week-1-vectorized-data-wrangling",
+    description:
+      "Transform and clean a messy 1.5M row e-commerce transactional dataset. Eliminate iterative Python for-loops using vectorized NumPy routines, handle missing data with statistical imputation, and optimize memory consumption by 60%+.",
+    objectives: [
+      "Benchmark loop-based vs. vectorized operations using %timeit in Jupyter",
+      "Design an automated categorical encoding and missing value imputation pipeline",
+      "Downcast numeric datatypes to reduce memory usage from 850MB to < 280MB",
+    ],
+    deliverables: [
+      "Jupyter Notebook (.ipynb) or clean Python script with benchmark markdown tables",
+      "Processed clean Parquet file schema documentation",
+      "Automated unit test suite verifying data transformations",
+    ],
+    due_date: new Date(Date.now() + 1000 * 60 * 60 * 24 * 4).toISOString(),
+    max_points: 100,
+    passing_points: 65,
+    difficulty: "Beginner",
+    status: "published",
+    starter_repo_url: "https://github.com/samsedutech-labs/ds-week1-wrangling",
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  },
+  {
+    id: "wa-ds-w2",
+    week_number: 2,
+    course_id: "applied-data-science",
+    course_title: "Applied Data Science & Advanced Analytics",
+    title: "Week 2: Statistical Hypothesis Testing & A/B Experiment Analysis",
+    slug: "week-2-statistical-hypothesis-testing",
+    description:
+      "Evaluate a live product checkout redesign using rigorous A/B testing principles. Check normality (Shapiro-Wilk), perform two-sample t-tests and Mann-Whitney U non-parametric tests, calculate statistical power, and assess practical vs. statistical significance.",
+    objectives: [
+      "Determine sample size and minimum detectable effect (MDE) with power analysis",
+      "Run hypothesis tests for conversion rates (binomial) and average order value (continuous)",
+      "Formulate an executive decision document advising product managers on checkout rollout",
+    ],
+    deliverables: [
+      "GitHub repo containing the complete statistical notebook and exploratory plots",
+      "A/B Test Executive Summary detailing p-values, 95% confidence intervals, and decision",
+      "Interactive Plotly distribution comparison chart",
+    ],
+    due_date: new Date(Date.now() + 1000 * 60 * 60 * 24 * 11).toISOString(),
+    max_points: 100,
+    passing_points: 70,
+    difficulty: "Intermediate",
+    status: "published",
+    starter_repo_url: "https://github.com/samsedutech-labs/ds-week2-ab-testing",
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  },
+  {
+    id: "wa-ds-w3",
+    week_number: 3,
+    course_id: "applied-data-science",
+    course_title: "Applied Data Science & Advanced Analytics",
+    title: "Week 3: Interactive Analytical Storytelling with Plotly & Streamlit",
+    slug: "week-3-interactive-analytics-dashboard",
+    description:
+      "Construct a responsive, multi-page business intelligence web application in Streamlit with interactive Plotly graphs, user filtering, drill-down cohort analysis, and CSV/PDF data export.",
+    objectives: [
+      "Build a multi-tab Streamlit dashboard with caching (@st.cache_data)",
+      "Create interactive Plotly express charts with custom hover templates and color scales",
+      "Deploy the dashboard locally or to Streamlit Community Cloud",
+    ],
+    deliverables: [
+      "GitHub repository with streamlit_app.py, requirements.txt, and sample dataset",
+      "Live deployment link or video screencast demonstrating dashboard interactions",
+      "Short documentation guide on dashboard insights and KPIs",
+    ],
+    due_date: new Date(Date.now() + 1000 * 60 * 60 * 24 * 18).toISOString(),
+    max_points: 100,
+    passing_points: 75,
+    difficulty: "Intermediate",
+    status: "published",
+    starter_repo_url: "https://github.com/samsedutech-labs/ds-week3-streamlit",
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  },
+  {
+    id: "wa-ds-w4",
+    week_number: 4,
+    course_id: "applied-data-science",
+    course_title: "Applied Data Science & Advanced Analytics",
+    title: "Week 4: Automated SQL ETL Pipelines & Warehouse Ingestion",
+    slug: "week-4-sql-etl-pipelines",
+    description:
+      "Engineer a resilient SQL-based ETL pipeline using PostgreSQL and Python. Ingest raw streaming JSON webhooks, parse nested objects, load into a star-schema dimensional model (fact & dim tables), and optimize query execution with covering indexes.",
+    objectives: [
+      "Design a Kimball-style Star Schema (fact_orders, dim_customers, dim_products)",
+      "Write idempotent Python ETL loader scripts with transactions and rollback support",
+      "Analyze query plans using EXPLAIN ANALYZE and implement B-tree/GIN index optimizations",
+    ],
+    deliverables: [
+      "SQL schema definitions (.sql) including tables, foreign keys, and indexes",
+      "Python ETL script with error handling and logging",
+      "EXPLAIN ANALYZE benchmark comparison before and after indexing",
+    ],
+    due_date: new Date(Date.now() + 1000 * 60 * 60 * 24 * 25).toISOString(),
+    max_points: 100,
+    passing_points: 80,
+    difficulty: "Advanced",
+    status: "published",
+    starter_repo_url: "https://github.com/samsedutech-labs/ds-week4-etl-pipeline",
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  },
+
+  // ────────────────────────────────────────────────────────────
+  // 3. Generative AI, Large Language Models & Autonomous Agents
+  // ────────────────────────────────────────────────────────────
+  {
+    id: "wa-genai-w1",
+    week_number: 1,
+    course_id: "generative-ai-and-agents",
+    course_title: "Generative AI, Large Language Models & Autonomous Agents",
+    title: "Week 1: Enterprise Prompt Engineering, Structured JSON & Guardrails",
+    slug: "week-1-prompt-engineering-guardrails",
+    description:
+      "Implement a robust LLM pipeline using few-shot in-context learning, Pydantic schema validation for guaranteed structured JSON outputs, and NeMo/Llama-Guard style safety filters for adversarial injection defense.",
+    objectives: [
+      "Construct few-shot prompts with dynamic exemplar selection",
+      "Enforce deterministic JSON schema validation using Pydantic / instructor library",
+      "Build a defense layer against prompt injection (jailbreak evasion & system prompt leakage)",
+    ],
+    deliverables: [
+      "GitHub repo containing the Python application with pytest validation suite",
+      "Adversarial test suite demonstrating 100% mitigation of prompt injection attacks",
+      "Benchmark report comparing output parsing reliability across temperature settings",
+    ],
+    due_date: new Date(Date.now() + 1000 * 60 * 60 * 24 * 4).toISOString(),
+    max_points: 100,
+    passing_points: 65,
+    difficulty: "Beginner",
+    status: "published",
+    starter_repo_url: "https://github.com/samsedutech-labs/genai-week1-structured-prompts",
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  },
+  {
+    id: "wa-genai-w2",
+    week_number: 2,
+    course_id: "generative-ai-and-agents",
+    course_title: "Generative AI, Large Language Models & Autonomous Agents",
+    title: "Week 2: Production Hybrid RAG Pipeline with Semantic Vector Search",
+    slug: "week-2-production-rag-hybrid-search",
+    description:
+      "Build an end-to-end Retrieval-Augmented Generation (RAG) system over unstructured financial reports (10-K). Implement semantic chunking, dense embeddings (bge-large/text-embedding-3), sparse BM25 keyword search, and cross-encoder reranking.",
+    objectives: [
+      "Ingest complex multi-page PDF documents preserving tables and section headers",
+      "Build a reciprocal rank fusion (RRF) hybrid retriever (BM25 + vector similarity)",
+      "Evaluate retrieval quality using RAGAS metrics (Faithfulness, Answer Relevance, Context Recall)",
+    ],
+    deliverables: [
+      "GitHub repo with the RAG pipeline code, vector store configuration, and test queries",
+      "RAGAS evaluation report showing >= 0.85 faithfulness and context recall",
+      "FastAPI endpoint for real-time document Q&A with citations",
+    ],
+    due_date: new Date(Date.now() + 1000 * 60 * 60 * 24 * 11).toISOString(),
+    max_points: 100,
+    passing_points: 70,
+    difficulty: "Intermediate",
+    status: "published",
+    starter_repo_url: "https://github.com/samsedutech-labs/genai-week2-hybrid-rag",
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  },
+  {
+    id: "wa-genai-w3",
+    week_number: 3,
+    course_id: "generative-ai-and-agents",
+    course_title: "Generative AI, Large Language Models & Autonomous Agents",
+    title: "Week 3: Autonomous Multi-Agent Systems & Workflows with LangGraph",
+    slug: "week-3-autonomous-multi-agent-langgraph",
+    description:
+      "Design a stateful, collaborative multi-agent architecture (Researcher, Analyst, Fact-Checker, and Synthesizer) using LangGraph. Implement cyclic execution graphs, human-in-the-loop checkpoints, and memory persistence.",
+    objectives: [
+      "Implement a LangGraph StateGraph with conditional edges and error correction cycles",
+      "Equip agents with external tools (Google Search API, Python code execution REPL)",
+      "Incorporate human-in-the-loop review nodes before sensitive actions execute",
+    ],
+    deliverables: [
+      "GitHub repository with graph topology diagrams (.png/mermaid) and full code",
+      "Demonstration trace link (LangSmith or console logs) of a complete research run",
+      "Comprehensive README explaining state schema and recovery mechanisms",
+    ],
+    due_date: new Date(Date.now() + 1000 * 60 * 60 * 24 * 18).toISOString(),
+    max_points: 100,
+    passing_points: 75,
+    difficulty: "Intermediate",
+    status: "published",
+    starter_repo_url: "https://github.com/samsedutech-labs/genai-week3-langgraph-agents",
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  },
+  {
+    id: "wa-genai-w4",
+    week_number: 4,
+    course_id: "generative-ai-and-agents",
+    course_title: "Generative AI, Large Language Models & Autonomous Agents",
+    title: "Week 4: Parameter-Efficient Fine-Tuning (LoRA/QLoRA) on Open Weights",
+    slug: "week-4-qlora-finetuning",
+    description:
+      "Fine-tune an open-source 7B/8B LLM (Llama 3 / Mistral) on a domain-specific instruction dataset using QLoRA 4-bit quantization, Hugging Face PEFT, and SFTTrainer. Evaluate loss curves and benchmark generated responses against the base model.",
+    objectives: [
+      "Prepare and format an instruction dataset in ChatML / Alpaca format with token auditing",
+      "Configure bitsandbytes 4-bit NF4 quantization and rank-16 LoRA adapters",
+      "Train model, monitor evaluation loss on Weights & Biases, and export merged GGUF/HF weights",
+    ],
+    deliverables: [
+      "GitHub repo containing the training script, dataset preprocessing, and evaluation notebook",
+      "W&B training curve screenshot showing convergence and learning rate schedule",
+      "Qualitative test suite comparing Base vs. Fine-tuned model answers",
+    ],
+    due_date: new Date(Date.now() + 1000 * 60 * 60 * 24 * 25).toISOString(),
+    max_points: 100,
+    passing_points: 80,
+    difficulty: "Advanced",
+    status: "published",
+    starter_repo_url: "https://github.com/samsedutech-labs/genai-week4-qlora-tuning",
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  },
+
+  // ────────────────────────────────────────────────────────────
+  // 4. Machine Learning Engineering & MLOps Pipelines
+  // ────────────────────────────────────────────────────────────
+  {
+    id: "wa-mle-w1",
+    week_number: 1,
+    course_id: "machine-learning-engineering",
+    course_title: "Machine Learning Engineering & MLOps Pipelines",
+    title: "Week 1: Feature Engineering & Gradient-Boosted Model Optimization",
+    slug: "week-1-feature-engineering-xgboost",
+    description:
+      "Develop a high-accuracy tabular predictive model (customer churn or credit default) using XGBoost and LightGBM. Engineer cyclical time features, target encodings, interaction terms, and perform Bayesian hyperparameter tuning with Optuna.",
+    objectives: [
+      "Construct a leakage-free Scikit-Learn / Polars feature engineering pipeline",
+      "Tune XGBoost hyperparameters (max_depth, learning_rate, subsample) with Optuna",
+      "Evaluate ROC-AUC, PR-AUC, and generate SHAP explainability summary plots",
+    ],
+    deliverables: [
+      "GitHub repo with clean feature engineering pipelines and Optuna optimization study",
+      "SHAP feature importance plots and business interpretation markdown summary",
+      "Pickled/ONNX serialized model artifact with inference benchmark script",
+    ],
+    due_date: new Date(Date.now() + 1000 * 60 * 60 * 24 * 4).toISOString(),
+    max_points: 100,
+    passing_points: 65,
+    difficulty: "Beginner",
+    status: "published",
+    starter_repo_url: "https://github.com/samsedutech-labs/mle-week1-xgboost-optuna",
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  },
+  {
+    id: "wa-mle-w2",
+    week_number: 2,
+    course_id: "machine-learning-engineering",
+    course_title: "Machine Learning Engineering & MLOps Pipelines",
+    title: "Week 2: Deep Neural Network Architecture in PyTorch",
+    slug: "week-2-pytorch-deep-learning",
+    description:
+      "Train a custom convolutional neural network (CNN) or Transformer in PyTorch with mixed-precision training (torch.cuda.amp), custom PyTorch Dataset/DataLoader, learning rate schedulers, and early stopping.",
+    objectives: [
+      "Implement a modular PyTorch nn.Module architecture with residual connections",
+      "Utilize Automatic Mixed Precision (AMP) to achieve 2x training acceleration on GPU",
+      "Implement checkpointing to resume training seamlessly upon interruption",
+    ],
+    deliverables: [
+      "GitHub repo containing PyTorch training loops, modular dataset loaders, and test scripts",
+      "TensorBoard or W&B training/validation loss and metric curves",
+      "Model inference benchmark measuring latency per image/sample on CPU and GPU",
+    ],
+    due_date: new Date(Date.now() + 1000 * 60 * 60 * 24 * 11).toISOString(),
+    max_points: 100,
+    passing_points: 70,
+    difficulty: "Intermediate",
+    status: "published",
+    starter_repo_url: "https://github.com/samsedutech-labs/mle-week2-pytorch-training",
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  },
+  {
+    id: "wa-mle-w3",
+    week_number: 3,
+    course_id: "machine-learning-engineering",
+    course_title: "Machine Learning Engineering & MLOps Pipelines",
+    title: "Week 3: MLOps Experiment Tracking, Model Registry & Validation with MLflow",
+    slug: "week-3-mlflow-experiment-tracking",
+    description:
+      "Integrate MLflow into a production ML training workflow. Track parameters, metrics, and dataset hashes; register versioned models in the MLflow Model Registry; and implement automated model validation gates before staging promotion.",
+    objectives: [
+      "Set up an automated MLflow tracking server and artifact store",
+      "Log parameters, metrics per epoch, and confusion matrix artifacts for all runs",
+      "Implement a promotion script that tests candidate models against production baseline",
+    ],
+    deliverables: [
+      "GitHub repo containing the instrumented training pipeline and promotion scripts",
+      "Screenshot or exported artifact from the MLflow UI showing registered model versions",
+      "Automated regression test suite validating model performance prior to deployment",
+    ],
+    due_date: new Date(Date.now() + 1000 * 60 * 60 * 24 * 18).toISOString(),
+    max_points: 100,
+    passing_points: 75,
+    difficulty: "Intermediate",
+    status: "published",
+    starter_repo_url: "https://github.com/samsedutech-labs/mle-week3-mlflow-registry",
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  },
+  {
+    id: "wa-mle-w4",
+    week_number: 4,
+    course_id: "machine-learning-engineering",
+    course_title: "Machine Learning Engineering & MLOps Pipelines",
+    title: "Week 4: Low-Latency Model Serving with FastAPI, Docker & ONNX Runtime",
+    slug: "week-4-model-serving-fastapi-docker",
+    description:
+      "Package a trained model into a production microservice with FastAPI and ONNX Runtime. Optimize inference latency to < 15ms, containerize with multi-stage Docker builds, and implement health check and Prometheus metric endpoints.",
+    objectives: [
+      "Export trained model to ONNX format with graph optimization and quantization",
+      "Develop an asynchronous FastAPI inference server with Pydantic request batching",
+      "Build a hardened, lightweight Docker container (< 250MB) and test with Locust load tests",
+    ],
+    deliverables: [
+      "GitHub repository containing the FastAPI service, Dockerfile, and ONNX export scripts",
+      "Locust load testing report proving sustainable 200+ requests/sec with p99 < 25ms",
+      "Docker Hub or GHCR container image link and run instructions",
+    ],
+    due_date: new Date(Date.now() + 1000 * 60 * 60 * 24 * 25).toISOString(),
+    max_points: 100,
+    passing_points: 80,
+    difficulty: "Advanced",
+    status: "published",
+    starter_repo_url: "https://github.com/samsedutech-labs/mle-week4-fastapi-onnx",
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  },
+
+  // ────────────────────────────────────────────────────────────
+  // 5. Full Stack Web & Cloud Engineering (Next.js, Node & Cloud)
+  // ────────────────────────────────────────────────────────────
+  {
+    id: "wa-fs-w1",
+    week_number: 1,
+    course_id: "fullstack-web-cloud-development",
+    course_title: "Full Stack Web & Cloud Engineering (Next.js, Node & Cloud)",
+    title: "Week 1: Next.js App Router Architecture, RSC & Server Actions",
+    slug: "week-1-nextjs-app-router-rsc",
+    description:
+      "Architect a scalable Next.js App Router application with React Server Components (RSC), Client Components, streaming with Suspense, dynamic route segments, and mutation handling via Type-safe Server Actions.",
+    objectives: [
+      "Implement nested layouts with parallel and intercepting routes",
+      "Build type-safe Server Actions with form validation and optimistic UI updates",
+      "Configure progressive streaming with loading.tsx and custom Suspense boundaries",
+    ],
+    deliverables: [
+      "GitHub repository containing the complete Next.js project with TypeScript",
+      "Live Vercel or cloud deployment URL demonstrating instant responsive UI",
+      "Lighthouse audit report showing 95+ score on Performance and Accessibility",
+    ],
+    due_date: new Date(Date.now() + 1000 * 60 * 60 * 24 * 4).toISOString(),
+    max_points: 100,
+    passing_points: 65,
+    difficulty: "Beginner",
+    status: "published",
+    starter_repo_url: "https://github.com/samsedutech-labs/fs-week1-nextjs-approuter",
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  },
+  {
+    id: "wa-fs-w2",
+    week_number: 2,
+    course_id: "fullstack-web-cloud-development",
+    course_title: "Full Stack Web & Cloud Engineering (Next.js, Node & Cloud)",
+    title: "Week 2: Relational Database Schema, Prisma ORM & RESTful APIs",
+    slug: "week-2-prisma-orm-relational-apis",
+    description:
+      "Design a normalized PostgreSQL database schema for a SaaS collaboration platform using Prisma ORM. Implement 1-to-many and many-to-many relationships, write database migrations, and expose clean REST/Route handlers with Zod validation.",
+    objectives: [
+      "Author a schema.prisma with models, enums, composite indexes, and cascading deletes",
+      "Execute safe database migrations with Prisma Migrate",
+      "Build CRUD Route Handlers with structured error handling and pagination",
+    ],
+    deliverables: [
+      "GitHub repository with schema.prisma, migration files, and route handlers",
+      "Postman or Thunder Client test collection verifying all API endpoints and status codes",
+      "Database schema entity-relationship diagram (ERD) in Markdown/Mermaid",
+    ],
+    due_date: new Date(Date.now() + 1000 * 60 * 60 * 24 * 11).toISOString(),
+    max_points: 100,
+    passing_points: 70,
+    difficulty: "Intermediate",
+    status: "published",
+    starter_repo_url: "https://github.com/samsedutech-labs/fs-week2-prisma-postgres",
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  },
+  {
+    id: "wa-fs-w3",
+    week_number: 3,
+    course_id: "fullstack-web-cloud-development",
+    course_title: "Full Stack Web & Cloud Engineering (Next.js, Node & Cloud)",
+    title: "Week 3: Production JWT Authentication, Session Security & RBAC",
+    slug: "week-3-secure-auth-rbac",
+    description:
+      "Implement a battle-tested authentication system featuring HTTP-only secure cookies, JWT access and refresh token rotation, password hashing with Argon2/bcrypt, and Role-Based Access Control (Admin, Instructor, Student) middleware.",
+    objectives: [
+      "Build secure login, register, and refresh token endpoints with CSRF protection",
+      "Implement Next.js Edge Middleware for route protection and RBAC authorization",
+      "Configure account lockout and sliding-window rate limiting on auth endpoints",
+    ],
+    deliverables: [
+      "GitHub repo containing the complete auth modules, middleware, and tests",
+      "Security audit checklist demonstrating mitigation of XSS, CSRF, and token replay",
+      "Automated integration tests verifying role permissions and unauthorized 403 responses",
+    ],
+    due_date: new Date(Date.now() + 1000 * 60 * 60 * 24 * 18).toISOString(),
+    max_points: 100,
+    passing_points: 75,
+    difficulty: "Intermediate",
+    status: "published",
+    starter_repo_url: "https://github.com/samsedutech-labs/fs-week3-secure-auth-rbac",
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  },
+  {
+    id: "wa-fs-w4",
+    week_number: 4,
+    course_id: "fullstack-web-cloud-development",
+    course_title: "Full Stack Web & Cloud Engineering (Next.js, Node & Cloud)",
+    title: "Week 4: Microcaching with Redis, Docker Containerization & Cloud CI/CD",
+    slug: "week-4-redis-docker-cicd",
+    description:
+      "Take your full-stack platform to enterprise scale. Implement high-throughput caching and distributed rate limiting with Redis/Upstash, containerize the application with Docker and docker-compose, and build a GitHub Actions CI/CD deployment pipeline.",
+    objectives: [
+      "Implement stale-while-revalidate Redis caching for high-traffic database queries",
+      "Author optimized multi-stage Dockerfile and docker-compose.yml for local and production",
+      "Create a GitHub Actions workflow that executes linting, typechecking, tests, and auto-deploy",
+    ],
+    deliverables: [
+      "GitHub repository with .github/workflows/deploy.yml, Dockerfile, and docker-compose.yml",
+      "Benchmark showing 5x reduction in database response latency with Redis caching",
+      "Live deployment URL with active continuous delivery from GitHub",
+    ],
+    due_date: new Date(Date.now() + 1000 * 60 * 60 * 24 * 25).toISOString(),
+    max_points: 100,
+    passing_points: 80,
+    difficulty: "Advanced",
+    status: "published",
+    starter_repo_url: "https://github.com/samsedutech-labs/fs-week4-redis-docker-cicd",
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
   },
@@ -136,7 +631,10 @@ function saveJsonFile<T>(filePath: string, data: T) {
 }
 
 // ── WEEKLY ASSESSMENTS STORE ──
-export async function getWeeklyAssessments(onlyPublished = false): Promise<WeeklyAssessment[]> {
+export async function getWeeklyAssessments(
+  onlyPublished = false,
+  courseId?: string | string[]
+): Promise<WeeklyAssessment[]> {
   const localList = loadJsonFile<WeeklyAssessment[]>(ASSESSMENTS_FILE, INITIAL_ASSESSMENTS);
   let list = localList;
 
@@ -156,8 +654,16 @@ export async function getWeeklyAssessments(onlyPublished = false): Promise<Weekl
   }
 
   if (onlyPublished) {
-    return list.filter((a) => a.status === "published").sort((a, b) => a.week_number - b.week_number);
+    list = list.filter((a) => a.status === "published");
   }
+
+  if (courseId) {
+    const allowed = new Set(
+      Array.isArray(courseId) ? courseId : [courseId]
+    );
+    list = list.filter((a) => allowed.has(a.course_id) || allowed.has(a.slug));
+  }
+
   return list.sort((a, b) => a.week_number - b.week_number);
 }
 

@@ -1,15 +1,15 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { CourseCard } from "@/components/course-card";
+import { HorizontalCourseTrack } from "@/components/horizontal-course-track";
 import { Icon } from "@/components/icon";
 import { COURSES } from "@/lib/courses";
 import type { Course } from "@/lib/types";
 
 export default async function HomePage() {
   const supabase = await createClient();
-  const { data } = await supabase.from("courses").select("*").order("created_at", { ascending: true }).limit(3);
+  const { data } = await supabase.from("courses").select("*").order("created_at", { ascending: true });
   const dbCourses = (data ?? []) as Course[];
-  const courses = dbCourses.length >= 3 ? dbCourses : COURSES.slice(0, 3);
+  const courses = dbCourses.length >= 5 ? dbCourses : COURSES;
   const featured = courses[0];
 
   return (
@@ -145,33 +145,18 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* ── FEATURED PROGRAMS SECTION ── */}
+      {/* ── FEATURED PROGRAMS HORIZONTAL CAROUSEL SECTION ── */}
       <section className="section" id="courses">
         <div className="container">
-          <div className="section-header">
-            <div>
-              <span className="sec-eyebrow">Industry Ready Programs</span>
-              <h2 className="section-title">Specialized Career Tracks</h2>
-              <p className="section-copy">
-                Curated by senior software architects and security researchers. Hands-on learning with verifiable certificates.
-              </p>
-            </div>
-            <Link href="/courses" className="btn btn-secondary">
-              View All Programs <Icon name="arrow" size={15} />
-            </Link>
-          </div>
-          {featured ? (
-            <div className="card-grid">
-              {courses.map((course) => (
-                <CourseCard key={course.id} course={course} featured={course.id === featured.id} />
-              ))}
-            </div>
-          ) : (
-            <div className="card empty-state">
-              <strong>Programs catalog initializing...</strong>
-              <span>Check back shortly as new cohorts are published.</span>
-            </div>
-          )}
+          <HorizontalCourseTrack
+            courses={courses}
+            featuredId={featured?.id}
+            eyebrow="Industry Ready Programs"
+            title="Specialized Career Tracks"
+            subtitle="Curated by senior software architects and security researchers. Hands-on learning with verifiable certificates."
+            viewAllHref="/courses"
+            viewAllLabel="View All Programs"
+          />
         </div>
       </section>
 

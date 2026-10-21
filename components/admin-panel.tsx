@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Icon } from "@/components/icon";
 import { BrandLogo } from "@/components/brand-logo";
 import { displayDate, displayDateTime } from "@/lib/utils";
+import { COURSES } from "@/lib/courses";
 import type {
   WeeklyAssessment,
   AssessmentSubmission,
@@ -42,10 +43,13 @@ export function AdminPanel({
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState("");
 
-  // New assessment form state
+  // Course-specific filters & form state
+  const [assessmentCourseFilter, setAssessmentCourseFilter] = useState("all");
+  const [submissionCourseFilter, setSubmissionCourseFilter] = useState("all");
+  const [newCourseId, setNewCourseId] = useState(COURSES[0].slug);
   const [newWeek, setNewWeek] = useState(assessments.length + 1);
   const [newTitle, setNewTitle] = useState("");
-  const [newTrack, setNewTrack] = useState("Universal Cohort Track");
+  const [newTrack, setNewTrack] = useState(COURSES[0].title);
   const [newDifficulty, setNewDifficulty] = useState<"Beginner" | "Intermediate" | "Advanced">("Intermediate");
   const [newMaxPoints, setNewMaxPoints] = useState(100);
   const [newDueDate, setNewDueDate] = useState(() => {
@@ -114,6 +118,7 @@ export function AdminPanel({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           week_number: Number(newWeek),
+          course_id: newCourseId,
           course_title: newTrack,
           title: newTitle,
           difficulty: newDifficulty,
@@ -250,10 +255,30 @@ export function AdminPanel({
     );
   }
 
-  // Filtered submissions
+  // Filtered assessments by course
+  const filteredAssessments = assessmentCourseFilter === "all"
+    ? assessments
+    : assessments.filter(
+        (a) =>
+          a.course_id === assessmentCourseFilter ||
+          a.slug.includes(assessmentCourseFilter) ||
+          a.course_title.toLowerCase().includes(assessmentCourseFilter.toLowerCase())
+      );
+
+  // Filtered submissions by status and course
   const filteredSubmissions = submissions.filter((s) => {
-    if (subFilter === "pending") return s.status === "submitted" || s.status === "under_review";
-    if (subFilter === "graded") return s.status === "graded";
+    if (subFilter === "pending" && !(s.status === "submitted" || s.status === "under_review")) return false;
+    if (subFilter === "graded" && s.status !== "graded") return false;
+    if (submissionCourseFilter !== "all") {
+      const parent = assessments.find((a) => a.id === s.assessment_id);
+      if (parent) {
+        const matches =
+          parent.course_id === submissionCourseFilter ||
+          parent.slug.includes(submissionCourseFilter) ||
+          parent.course_title.toLowerCase().includes(submissionCourseFilter.toLowerCase());
+        if (!matches) return false;
+      }
+    }
     return true;
   });
 
@@ -501,6 +526,36 @@ export function AdminPanel({
               </button>
             </div>
 
+            {/* Filter by Course Track */}
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14, flexWrap: "wrap" }}>
+              <span style={{ fontSize: "0.82rem", fontWeight: 700, color: "var(--muted)" }}>Program Track:</span>
+              <button
+                type="button"
+                className={`filter-chip ${assessmentCourseFilter === "all" ? "active" : ""}`}
+                onClick={() => setAssessmentCourseFilter("all")}
+              >
+                All Programs ({assessments.length})
+              </button>
+              {COURSES.map((course) => {
+                const count = assessments.filter(
+                  (a) =>
+                    a.course_id === course.slug ||
+                    a.course_id === course.id ||
+                    a.course_title.toLowerCase().includes(course.title.toLowerCase())
+                ).length;
+                return (
+                  <button
+                    key={course.slug}
+                    type="button"
+                    className={`filter-chip ${assessmentCourseFilter === course.slug ? "active" : ""}`}
+                    onClick={() => setAssessmentCourseFilter(course.slug)}
+                  >
+                    {course.title.split("(")[0].trim()} ({count})
+                  </button>
+                );
+              })}
+            </div>
+
             <div className="assessments-admin-table-card card" style={{ padding: 20 }}>
               <div className="table-responsive">
                 <table className="admin-table">
@@ -517,7 +572,7 @@ export function AdminPanel({
                     </tr>
                   </thead>
                   <tbody>
-                    {assessments.map((a) => {
+                    {filteredAssessments.map((a) => {
                       const count = submissions.filter((s) => s.assessment_id === a.id).length;
                       return (
                         <tr key={a.id}>
@@ -591,15 +646,21 @@ export function AdminPanel({
                       </div>
 
                       <div className="field">
-                        <label>Associated Course / Track *</label>
+                        <label>Associated Program Track *</label>
                         <select
-                          value={newTrack}
-                          onChange={(e) => setNewTrack(e.target.value)}
+                          value={newCourseId}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setNewCourseId(val);
+                            const found = COURSES.find((c) => c.slug === val);
+                            if (found) setNewTrack(found.title);
+                          }}
                         >
-                          <option>Universal Cohort Track</option>
-                          <option>Cybersecurity Foundations</option>
-                          <option>Web Application Security</option>
-                          <option>Python for Security</option>
+                          {COURSES.map((course) => (
+                            <option key={course.slug} value={course.slug}>
+                              {course.title}
+                            </option>
+                          ))}
                         </select>
                       </div>
 
@@ -741,6 +802,27 @@ export function AdminPanel({
               </div>
             </div>
 
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14, flexWrap: "wrap" }}>
+              <span style={{ fontSize: "0.82rem", fontWeight: 700, color: "var(--muted)" }}>Program Track:</span>
+              <button
+                type="button"
+                className={`filter-chip ${submissionCourseFilter === "all" ? "active" : ""}`}
+                onClick={() => setSubmissionCourseFilter("all")}
+              >
+                All Programs
+              </button>
+              {COURSES.map((course) => (
+                <button
+                  key={course.slug}
+                  type="button"
+                  className={`filter-chip ${submissionCourseFilter === course.slug ? "active" : ""}`}
+                  onClick={() => setSubmissionCourseFilter(course.slug)}
+                >
+                  {course.title.split("(")[0].trim()}
+                </button>
+              ))}
+            </div>
+
             <div className="card" style={{ padding: 20 }}>
               {filteredSubmissions.length === 0 ? (
                 <div className="empty" style={{ padding: 36, textAlign: "center" }}>
@@ -777,7 +859,9 @@ export function AdminPanel({
                             </td>
                             <td>
                               <strong>{parent?.title || sub.assessment_id}</strong>
-                              <div className="small-hint">Max Points: {parent?.max_points || 100}</div>
+                              <div className="small-hint">
+                                <span style={{ color: "var(--blue)", fontWeight: 700 }}>{parent?.course_title}</span> &middot; Max: {parent?.max_points || 100} pts
+                              </div>
                             </td>
                             <td>
                               <a
@@ -839,7 +923,7 @@ export function AdminPanel({
                         Grading: {gradingSubmission.student_name}
                       </h3>
                       <div className="small-hint">
-                        Assessment: {assessments.find((a) => a.id === gradingSubmission.assessment_id)?.title}
+                        <strong style={{ color: "var(--blue)" }}>{assessments.find((a) => a.id === gradingSubmission.assessment_id)?.course_title}</strong> &middot; {assessments.find((a) => a.id === gradingSubmission.assessment_id)?.title}
                       </div>
                     </div>
                     <button

@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { displayDate } from "@/lib/utils";
 import { Icon } from "@/components/icon";
-import { CourseCard } from "@/components/course-card";
+import { HorizontalCourseTrack } from "@/components/horizontal-course-track";
 import { RoyalCertificateCard } from "@/components/royal-certificate-card";
 import { UserAvatar } from "@/components/user-avatar";
 import { WeeklyAssessmentsTab } from "@/components/weekly-assessments-tab";
@@ -42,6 +42,34 @@ export default async function DashboardPage({
   const typedEnrollments = (enrollments ?? []) as unknown as Enrollment[];
   const dbCourses = (courses ?? []) as Course[];
   const typedCourses = dbCourses.length >= 5 ? dbCourses : COURSES;
+
+  // Build enrolled courses list and IDs
+  const enrolledCourses = typedEnrollments.map((e) => {
+    const courseObj = e.course || COURSES.find((c) => c.id === e.course_id || c.slug === e.course_id);
+    return {
+      id: courseObj?.id || e.course_id,
+      slug: courseObj?.slug || e.course_id,
+      title: courseObj?.title || "Enrolled Course",
+      category: courseObj?.category || "Technology",
+    };
+  });
+  const enrolledCourseIds = new Set(
+    enrolledCourses.flatMap((c) => [c.id, c.slug])
+  );
+
+  // Isolate weekly assessments strictly to enrolled courses
+  const studentAssessments = enrolledCourses.length === 0
+    ? []
+    : weeklyAssessments.filter((a) =>
+        enrolledCourseIds.has(a.course_id) ||
+        enrolledCourseIds.has(a.slug) ||
+        enrolledCourses.some(
+          (c) =>
+            c.title.toLowerCase().includes(a.course_title.toLowerCase()) ||
+            a.course_title.toLowerCase().includes(c.title.toLowerCase())
+        )
+      );
+
   const average = averageProgress(typedEnrollments);
   const completed = completedCourses(typedEnrollments);
   const active = inProgressCourses(typedEnrollments);
@@ -93,7 +121,7 @@ export default async function DashboardPage({
 
               <div className="kpi-grid">
                 <div className="kpi">
-                  <span className="num">{weeklyAssessments.length}</span>
+                  <span className="num">{enrolledCourses.length > 0 ? studentAssessments.length : 0}</span>
                   <span className="label">Weekly Assignments</span>
                   <span className="hint">{studentSubmissions.length} submitted</span>
                 </div>
@@ -111,13 +139,13 @@ export default async function DashboardPage({
             </div>
 
             {/* ── INTERACTIVE TAB SWITCHER (WEEKLY ASSESSMENTS vs ENROLLED PROGRAMS) ── */}
-            <div className="dashboard-tab-bar" style={{ margin: "22px 0 16px", display: "flex", alignItems: "center", gap: 10 }}>
+            <div className="dashboard-tab-bar" style={{ margin: "22px 0 16px", display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
               <Link
                 href="/dashboard?tab=assessments"
                 className={`btn ${currentTab === "assessments" ? "btn-orange" : "btn-secondary"} btn-sm`}
                 style={{ borderRadius: "8px" }}
               >
-                <Icon name="target" size={15} /> Weekly Assessments &amp; Assignments ({weeklyAssessments.length})
+                <Icon name="target" size={15} /> Weekly Assessments &amp; Assignments ({enrolledCourses.length > 0 ? studentAssessments.length : 0})
               </Link>
               <Link
                 href="/dashboard?tab=courses"
@@ -131,11 +159,12 @@ export default async function DashboardPage({
             {/* ── TAB CONTENT 1: WEEKLY ASSESSMENTS (PRIMARY VIEW) ── */}
             {currentTab === "assessments" && (
               <WeeklyAssessmentsTab
-                assessments={weeklyAssessments}
+                assessments={studentAssessments}
                 submissions={studentSubmissions}
                 studentId={user.id}
                 studentName={displayName}
                 studentEmail={user.email || ""}
+                enrolledCourses={enrolledCourses}
               />
             )}
 
@@ -190,16 +219,13 @@ export default async function DashboardPage({
 
             {suggested.length > 0 && (
               <section className="section" style={{ padding: "30px 0 0" }} aria-labelledby="recommended-heading">
-                <div className="section-bar">
-                  <div>
-                    <h2 id="recommended-heading">Recommended for your career path</h2>
-                    <p>Courses designed to accelerate your technical depth.</p>
-                  </div>
-                  <Link href="/courses" className="btn btn-ghost">See all <Icon name="arrow" size={15} /></Link>
-                </div>
-                <div className="card-grid">
-                  {suggested.map((course) => <CourseCard key={course.id} course={course} />)}
-                </div>
+                <HorizontalCourseTrack
+                  courses={suggested}
+                  title="Recommended for your career path"
+                  subtitle="Courses designed to accelerate your technical depth."
+                  viewAllHref="/courses"
+                  viewAllLabel="See all"
+                />
               </section>
             )}
           </section>
