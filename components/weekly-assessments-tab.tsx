@@ -154,7 +154,7 @@ export function WeeklyAssessmentsTab({
           </p>
           <div className="zero-enrollment-actions">
             <Link href="/courses" className="btn btn-orange zero-enrollment-btn">
-              <span>Explore 5 Career Tracks &amp; Enroll</span>
+              <span>Explore Programs &amp; Enroll</span>
               <Icon name="arrow" size={15} />
             </Link>
           </div>

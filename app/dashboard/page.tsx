@@ -82,7 +82,7 @@ export default async function DashboardPage({
     <main className="dashboard">
       <div className="container">
         <div className="dashboard-grid">
-          <section>
+          <section className="dashboard-main-col">
             {/* ── WELCOME HERO CARD ── */}
             <div className="welcome card welcome-geometric-card">
               <div className="geometric-bg-welcome" aria-hidden="true">
@@ -239,7 +239,7 @@ export default async function DashboardPage({
           </section>
 
           {/* ── SIDEBAR ── */}
-          <aside className="side-stack">
+          <aside className="side-stack dashboard-side-col">
             <div className="card side-card dashboard-profile-card">
               <div className="profile-hero dashboard-profile-hero">
                 <UserAvatar
