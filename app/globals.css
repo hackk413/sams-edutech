@@ -2894,4 +2894,113 @@ button { cursor: pointer; }
   }
 }
 
+/* ── REMOVE NORMAL HEADER FROM ADMIN DASHBOARD ── */
+.site-shell:has(.admin-console-page) .topbar,
+body.in-admin-dashboard .topbar {
+  display: none !important;
+}
+
+.admin-console-page {
+  min-height: 100vh;
+}
+
+/* ── MOTIVE SECTION & BADGES ── */
+.motive-section {
+  padding: 56px 0;
+  background: var(--surface);
+  position: relative;
+}
+
+.motive-card {
+  position: relative;
+  background: linear-gradient(135deg, rgba(26, 111, 232, 0.05) 0%, rgba(249, 115, 22, 0.07) 100%), var(--white);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-xl);
+  padding: 44px 36px;
+  text-align: center;
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+}
+
+[data-theme="dark"] .motive-card {
+  background: linear-gradient(135deg, rgba(26, 111, 232, 0.12) 0%, rgba(249, 115, 22, 0.10) 100%), var(--white);
+  border-color: var(--line);
+}
+
+.motive-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 16px;
+  border-radius: 99px;
+  background: var(--orange-soft);
+  color: var(--orange-dark);
+  border: 1px solid rgba(249, 115, 22, 0.25);
+  font-size: 0.8rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.motive-spark {
+  display: inline-flex;
+  color: var(--orange);
+}
+
+.motive-quote {
+  font-size: clamp(1.2rem, 2.2vw, 1.55rem);
+  font-weight: 800;
+  color: var(--ink);
+  line-height: 1.45;
+  max-width: 860px;
+  margin: 0;
+}
+
+.motive-meta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  flex-wrap: wrap;
+  margin-top: 6px;
+}
+
+.motive-pillar {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 0.86rem;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.motive-pillar svg {
+  color: var(--green);
+}
+
+/* Footer Motive */
+.footer-motive-box {
+  padding: 14px 18px;
+  margin: 18px 0;
+  background: var(--surface-2);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--line);
+  font-size: 0.88rem;
+  line-height: 1.5;
+  color: var(--ink-secondary);
+}
+
+.footer-motive-label {
+  font-weight: 800;
+  color: var(--orange);
+  margin-right: 8px;
+}
+
+.footer-motive-text {
+  font-weight: 600;
+}
+
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Icon } from "@/components/icon";
 import { BrandLogo } from "@/components/brand-logo";
@@ -33,6 +33,17 @@ export function AdminPanel({
   const [passkey, setPasskey] = useState("");
   const [loginError, setLoginError] = useState("");
   const [loggingIn, setLoggingIn] = useState(false);
+
+  useEffect(() => {
+    if (authenticated) {
+      document.body.classList.add("in-admin-dashboard");
+      return () => {
+        document.body.classList.remove("in-admin-dashboard");
+      };
+    } else {
+      document.body.classList.remove("in-admin-dashboard");
+    }
+  }, [authenticated]);
 
   // Active module tab
   const [activeTab, setActiveTab] = useState<"overview" | "assessments" | "submissions" | "students" | "security">("overview");
@@ -229,10 +240,6 @@ export function AdminPanel({
                 autoFocus
                 required
               />
-              <span className="field-hint" style={{ marginTop: 6, display: "flex", justifyContent: "space-between" }}>
-                <span>Default Passkey: <code>sams-edutech-admin-2026-secure-key</code></span>
-                <span>Protected by AES-256-GCM</span>
-              </span>
             </div>
 
             <button
@@ -244,12 +251,6 @@ export function AdminPanel({
               {loggingIn ? "Verifying Credentials..." : <><span>Authorize Admin Access</span> <Icon name="arrow" size={15} /></>}
             </button>
           </form>
-
-          <div className="gate-security-footer">
-            <div className="sec-chip"><Icon name="check" size={11} /> Timing-Safe Equal Active</div>
-            <div className="sec-chip"><Icon name="check" size={11} /> HMAC-SHA256 Signed</div>
-            <div className="sec-chip"><Icon name="check" size={11} /> HttpOnly Session</div>
-          </div>
         </div>
       </div>
     );

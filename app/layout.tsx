@@ -71,6 +71,12 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
                   <span className="recog-badge">24/7 Access</span>
                 </div>
               </div>
+              <div className="footer-motive-box">
+                <span className="footer-motive-label">Motive:</span>
+                <span className="footer-motive-text">
+                  Our mission is to make industry-relevant technical education accessible, practical, and career-focused for every learner.
+                </span>
+              </div>
               <div className="footer-bottom-row">
                 <div>&copy; {new Date().getFullYear()} SAMS EDUTECH SOLUTIONS PRIVATE LIMITED. All rights reserved.</div>
                 <div className="footer-links">

@@ -145,6 +145,32 @@ export default async function HomePage() {
         </div>
       </section>
 
+      {/* ── MOTIVE SECTION ── */}
+      <section className="motive-section">
+        <div className="container">
+          <div className="motive-card">
+            <div className="motive-badge">
+              <span className="motive-spark"><Icon name="spark" size={14} /></span>
+              <span>Our Motive</span>
+            </div>
+            <blockquote className="motive-quote">
+              &ldquo;Our mission is to make industry-relevant technical education accessible, practical, and career-focused for every learner.&rdquo;
+            </blockquote>
+            <div className="motive-meta">
+              <span className="motive-pillar">
+                <Icon name="check" size={14} /> Accessible Education
+              </span>
+              <span className="motive-pillar">
+                <Icon name="check" size={14} /> Practical Industry Labs
+              </span>
+              <span className="motive-pillar">
+                <Icon name="check" size={14} /> Career-Focused Mastery
+              </span>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* ── FEATURED PROGRAMS HORIZONTAL CAROUSEL SECTION ── */}
       <section className="section" id="courses">
         <div className="container">
