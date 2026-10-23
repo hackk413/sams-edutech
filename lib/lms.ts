@@ -26,7 +26,7 @@ export function profileCompletion(profile: Profile | null) {
   return Math.round((fields.filter((field) => field?.trim()).length / fields.length) * 100);
 }
 
-export function recommendedCourses(courses: Course[], enrollments: Enrollment[], limit = 3) {
+export function recommendedCourses(courses: Course[], enrollments: Enrollment[], limit = 6) {
   const enrolled = new Set(enrollments.map((item) => item.course_id));
   return courses.filter((course) => !enrolled.has(course.id)).slice(0, limit);
 }

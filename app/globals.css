@@ -3003,4 +3003,31 @@ body.in-admin-dashboard .topbar {
   font-weight: 600;
 }
 
+/* ── DASHBOARD RECOMMENDED FULL WIDTH TRACK ── */
+.dashboard-recommended-section {
+  margin-top: 48px;
+  padding-top: 36px;
+  border-top: 1px solid var(--line);
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+
+@media (min-width: 1025px) {
+  .dashboard .container {
+    width: min(1360px, calc(100% - 48px));
+  }
+  .horizontal-course-item {
+    flex: 0 0 clamp(330px, calc((100% - 44px) / 3), 380px);
+    max-width: 390px;
+  }
+}
+
+@media (min-width: 1600px) {
+  .horizontal-course-item {
+    flex: 0 0 360px;
+    max-width: 380px;
+  }
+}
+
 

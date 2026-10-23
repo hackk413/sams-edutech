@@ -73,7 +73,7 @@ export default async function DashboardPage({
   const average = averageProgress(typedEnrollments);
   const completed = completedCourses(typedEnrollments);
   const active = inProgressCourses(typedEnrollments);
-  const suggested = recommendedCourses(typedCourses, typedEnrollments);
+  const suggested = recommendedCourses(typedCourses, typedEnrollments, 6);
   const displayName = typedProfile?.full_name || (user.user_metadata?.full_name as string | undefined) || user.email || "Student";
   const avatarUrl = (user.user_metadata?.avatar_url as string | undefined) || typedProfile?.avatar_url || null;
   const firstName = displayName.split(/\s+/)[0];
@@ -224,18 +224,6 @@ export default async function DashboardPage({
                 )}
               </section>
             )}
-
-            {suggested.length > 0 && (
-              <section className="section" style={{ padding: "30px 0 0" }} aria-labelledby="recommended-heading">
-                <HorizontalCourseTrack
-                  courses={suggested}
-                  title="Recommended for your career path"
-                  subtitle="Courses designed to accelerate your technical depth."
-                  viewAllHref="/courses"
-                  viewAllLabel="See all"
-                />
-              </section>
-            )}
           </section>
 
           {/* ── SIDEBAR ── */}
@@ -280,6 +268,19 @@ export default async function DashboardPage({
             </div>
           </aside>
         </div>
+
+        {/* ── RECOMMENDED FOR YOUR CAREER PATH (FULL WIDTH HORIZONTAL TRACK) ── */}
+        {suggested.length > 0 && (
+          <section className="dashboard-recommended-section" aria-labelledby="recommended-heading">
+            <HorizontalCourseTrack
+              courses={suggested}
+              title="Recommended for your career path"
+              subtitle="Courses designed to accelerate your technical depth."
+              viewAllHref="/courses"
+              viewAllLabel="See all"
+            />
+          </section>
+        )}
       </div>
     </main>
   );
