@@ -8,7 +8,7 @@ import { RoyalCertificateCard } from "@/components/royal-certificate-card";
 import { UserAvatar } from "@/components/user-avatar";
 import { WeeklyAssessmentsTab } from "@/components/weekly-assessments-tab";
 import { averageProgress, clampProgress, completedCourses, inProgressCourses, recommendedCourses } from "@/lib/lms";
-import { getWeeklyAssessments, getSubmissions } from "@/lib/assessments";
+import { getWeeklyAssessments, getSubmissions, recordRealStudent } from "@/lib/assessments";
 import { COURSES } from "@/lib/courses";
 import type { Enrollment, Course, Profile } from "@/lib/types";
 
@@ -77,6 +77,13 @@ export default async function DashboardPage({
   const displayName = typedProfile?.full_name || (user.user_metadata?.full_name as string | undefined) || user.email || "Student";
   const avatarUrl = (user.user_metadata?.avatar_url as string | undefined) || typedProfile?.avatar_url || null;
   const firstName = displayName.split(/\s+/)[0];
+
+  recordRealStudent({
+    id: user.id,
+    full_name: displayName,
+    email: user.email || "",
+    avatar_url: avatarUrl,
+  });
 
   return (
     <main className="dashboard">

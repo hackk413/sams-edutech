@@ -3,7 +3,8 @@ import { createClient } from "@/lib/supabase/server";
 import { EnrollButton } from "@/components/enroll-button";
 import { Icon } from "@/components/icon";
 import { getCourseSyllabus } from "@/lib/lms";
-import { COURSES, COURSE_PRICES, getCourseBySlug } from "@/lib/courses";
+import { COURSES, getCourseBySlug } from "@/lib/courses";
+import { getCoursePriceConfig } from "@/lib/courses-server";
 import type { Course } from "@/lib/types";
 
 export function generateStaticParams() {
@@ -36,9 +37,11 @@ export default async function CourseDetailPage({ params }: { params: Promise<{ s
     );
   }
 
-  const pricing = COURSE_PRICES[typedCourse.slug] || {
-    price: typedCourse.price ?? 3499,
-    original: typedCourse.original_price ?? 9999,
+  const pricingConfig = getCoursePriceConfig(typedCourse.slug);
+  const pricing = {
+    price: pricingConfig.price,
+    original: pricingConfig.original_price,
+    discount_percent: pricingConfig.discount_percent,
   };
   const syllabus = getCourseSyllabus(typedCourse.slug);
 
@@ -75,7 +78,7 @@ export default async function CourseDetailPage({ params }: { params: Promise<{ s
               <div className="card course-hero">
                 <div className={`course-banner ${typedCourse.accent}`}>
                   <div>
-                    <div className="banner-kicker">{typedCourse.category} &middot; {typedCourse.level}</div>
+                    <div className="banner-kicker">{typedCourse.category} &middot; {typedCourse.level} &middot; {typedCourse.duration_months ?? 3} Months Plan</div>
                     <h1>{typedCourse.title}</h1>
                   </div>
                 </div>
@@ -135,7 +138,9 @@ export default async function CourseDetailPage({ params }: { params: Promise<{ s
                   <span className="course-price">&#8377;{pricing.price.toLocaleString()}</span>
                   <span className="course-original-price">&#8377;{pricing.original.toLocaleString()}</span>
                 </div>
-                <span className="discount-badge">65% Limited Scholarship Offer</span>
+                {pricing.discount_percent > 0 && (
+                  <span className="discount-badge">{pricing.discount_percent}% Limited Scholarship Offer</span>
+                )}
               </div>
               <div className="muted" style={{ marginTop: 6, fontSize: "0.78rem" }}>
                 Includes Lifetime Portal Access, Mentorship &amp; Certificate

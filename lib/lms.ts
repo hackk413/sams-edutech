@@ -46,221 +46,206 @@ export function progressLabel(progress: number) {
 export function getCourseSyllabus(slug: string): SyllabusModule[] {
   switch (slug) {
     case "cybersecurity-soc-operations":
+      // 4-Month Comprehensive Track (16 Weeks)
       return [
         {
-          title: "Module 1: Enterprise Security Architecture & Threat Modeling",
-          duration: "Weeks 1–2",
+          title: "Month 1: Enterprise Security Architecture & Threat Modeling",
+          duration: "Weeks 1–4",
           topics: [
-            "Security Operations Center (SOC) Architecture: Tier 1, 2, 3 Triage & Escalation",
-            "MITRE ATT&CK Framework, Cyber Kill Chain & Threat Matrix Mapping",
-            "Enterprise Identity & Access Management (IAM), Zero Trust & Host Hardening",
-            "Endpoint Detection and Response (EDR) Agent Architecture & Telemetry",
+            "Week 1: SOC Architecture: Tier 1, 2, 3 Triage, Runbooks & Escalation Workflows",
+            "Week 2: MITRE ATT&CK Matrix, Cyber Kill Chain & Defensive Strategy Mapping",
+            "Week 3: Zero Trust Architecture, Enterprise IAM & Linux/Windows Host Hardening",
+            "Week 4: EDR Telemetry, Endpoint Security & Live Attack Surface Reconnaissance",
           ],
         },
         {
-          title: "Module 2: Network Traffic Forensics & Deep Packet Inspection",
-          duration: "Weeks 3–4",
+          title: "Month 2: Deep Packet Forensics & Network Threat Hunting",
+          duration: "Weeks 5–8",
           topics: [
-            "TCP/IP Protocol Security, Firewall Rulesets & Microsegmentation",
-            "Deep Packet Analysis with Wireshark & Network Flow Triage (Zeek/Suricata)",
-            "C2 Communication Patterns, DNS Tunneling & Beaconing Detection",
-            "Decryption Architectures, TLS 1.3 Inspection & PKI Certificate Verification",
+            "Week 5: TCP/IP Packet Dissection, Flow Triage with Zeek & Suricata IDS/IPS",
+            "Week 6: Wireshark Packet Forensics, TLS 1.3 Decryption & Certificate Inspection",
+            "Week 7: Command & Control (C2) Detection, DNS Tunneling & Beaconing Analysis",
+            "Week 8: Perimeter Security, Microsegmentation & Advanced Firewall Rulesets",
           ],
         },
         {
-          title: "Module 3: Enterprise SIEM Deployment, Log Analytics & Detection Engineering",
-          duration: "Weeks 5–6",
+          title: "Month 3: Enterprise SIEM Log Ingestion & Detection Engineering",
+          duration: "Weeks 9–12",
           topics: [
-            "SIEM Architecture: Ingestion Pipelines, Log Normalization & Indexing",
-            "Splunk & Elastic (ELK) Query Syntax: Writing High-Fidelity Correlation Rules",
-            "Detection Engineering with Sigma Rules & YARA Threat Scanning",
-            "Alert Fatigue Mitigation, False Positive Elimination & Tuning",
+            "Week 9: Splunk & Elastic Log Ingestion Pipelines, Normalization & Index Tuning",
+            "Week 10: Writing High-Fidelity Splunk (SPL) & KQL Correlation Rules",
+            "Week 11: Detection Engineering with Sigma Rules & Automated YARA File Scanning",
+            "Week 12: Alert Fatigue Reduction, False Positive Elimination & Automated SOAR Playbooks",
           ],
         },
         {
-          title: "Module 4: Incident Handling, Threat Hunting & Live Ransomware Containment",
-          duration: "Weeks 7–8",
+          title: "Month 4: Incident Response, Live Ransomware Containment & Capstone",
+          duration: "Weeks 13–16",
           topics: [
-            "NIST SP 800-61 & SANS 6-Step Incident Response Lifecycle",
-            "Live Memory Forensics (Volatility) & Windows Event Log Forensics",
-            "Ransomware Containment Playbooks & Lateral Movement Interception",
-            "Capstone: Live Red vs. Blue Enterprise Breach Simulation & Post-Mortem Report",
+            "Week 13: NIST SP 800-61 Incident Handling Lifecycle & Digital Chain of Custody",
+            "Week 14: Volatility 3 Memory Forensics, Kernel Hook Detection & Sysmon Triage",
+            "Week 15: Ransomware Outbreak Containment Playbooks & Lateral Movement Interception",
+            "Week 16: Enterprise Red vs. Blue Live Breach Simulation & CIRT Executive Post-Mortem",
           ],
         },
       ];
 
     case "applied-data-science":
+      // 3-Month Accelerator Track (12 Weeks)
       return [
         {
-          title: "Module 1: Python for Data Science & Vectorized Computing",
-          duration: "Weeks 1–2",
+          title: "Month 1: High-Performance Python & Vectorized Data Wrangling",
+          duration: "Weeks 1–4",
           topics: [
-            "High-Performance Numerical Computing with NumPy Array Operations",
-            "Advanced Data Wrangling, Cleaning & Transformation with Pandas",
-            "Handling Missing Values, Outlier Detection & Categorical Encoding",
-            "Optimizing Data Pipelines with Vectorized Functions & Polars",
+            "Week 1: High-Performance Numerical Computing with NumPy Vectorized Operations",
+            "Week 2: Advanced Data Cleaning, Outlier Detection & Transformation with Pandas",
+            "Week 3: Categorical Encoding, Feature Imputation & Memory Optimization with Polars",
+            "Week 4: Automated Data Ingestion Pipelines & Exploratory Data Analysis (EDA)",
           ],
         },
         {
-          title: "Module 2: Statistical Analysis, Probability & Hypothesis Testing",
-          duration: "Weeks 3–4",
+          title: "Month 2: Statistical Inference, Hypothesis Testing & SQL ETL",
+          duration: "Weeks 5–8",
           topics: [
-            "Descriptive vs. Inferential Statistics & Probability Distributions",
-            "Hypothesis Testing: T-tests, ANOVA, Chi-Square & Non-Parametric Tests",
-            "A/B Testing Frameworks: Minimum Detectable Effect, Sample Sizing & P-hacking Defenses",
-            "Correlation vs. Causation & Regression Modeling Fundamentals",
+            "Week 5: Inferential Statistics, Probability Distributions & Regression Modeling",
+            "Week 6: A/B Testing Frameworks: Minimum Detectable Effect, Sample Sizing & P-Hacking Defenses",
+            "Week 7: Advanced Enterprise SQL: Window Functions, CTEs & Index Optimization",
+            "Week 8: Automated ETL Pipelines with Python, DuckDB & Parquet Cloud Lakehouses",
           ],
         },
         {
-          title: "Module 3: Advanced Data Visualization & Interactive Dashboards",
-          duration: "Weeks 5–6",
+          title: "Month 3: Interactive Dashboards, Production Analytics & Capstone",
+          duration: "Weeks 9–12",
           topics: [
-            "Exploratory Data Analysis (EDA) Best Practices & Cognitive Visual Hierarchy",
-            "Publication-Quality Plotting with Matplotlib & Seaborn",
-            "Building Interactive Web Applications & Dashboards with Streamlit & Plotly",
-            "Business Intelligence Storytelling & Executive Reporting Frameworks",
-          ],
-        },
-        {
-          title: "Module 4: Enterprise SQL Pipelines, ETL Automation & Cloud Warehousing",
-          duration: "Weeks 7–8",
-          topics: [
-            "Advanced SQL: Window Functions, CTEs, Recursive Queries & Index Optimization",
-            "Automating ETL Workflows with Python, DuckDB & Parquet File Formats",
-            "Connecting to Cloud Warehouses (BigQuery / Snowflake / Postgres)",
-            "Capstone: Building an End-to-End Enterprise E-Commerce Analytics Engine",
+            "Week 9: Publication-Grade Visual Analytics with Matplotlib, Seaborn & Plotly",
+            "Week 10: Interactive Web Applications & Real-Time Executive Dashboards with Streamlit",
+            "Week 11: Business Intelligence Storytelling, KPI Tracking & Executive Reporting",
+            "Week 12: Production Capstone: End-to-End Enterprise E-Commerce Analytics Engine",
           ],
         },
       ];
 
     case "generative-ai-and-agents":
+      // 4-Month Comprehensive Track (16 Weeks)
       return [
         {
-          title: "Module 1: Foundation Models, Embeddings & Vector Databases",
-          duration: "Weeks 1–2",
+          title: "Month 1: Foundation Models, Neural Architectures & Vector Search",
+          duration: "Weeks 1–4",
           topics: [
-            "Transformer Architecture Deep Dive: Self-Attention, Tokenization & Positional Encoding",
-            "Text Embeddings, Cosine Similarity & Dimensionality Reduction",
-            "Vector Database Implementations: Pinecone, Qdrant, ChromaDB & pgvector",
-            "Dense vs. Sparse Retrieval & Approximate Nearest Neighbor (HNSW) Algorithms",
+            "Week 1: Transformer Architecture Deep Dive: Self-Attention, Tokenization & Positional Encoding",
+            "Week 2: Dense Text Embeddings, Semantic Similarity & Dimensionality Reduction",
+            "Week 3: Vector Databases from Scratch: Pinecone, Qdrant, ChromaDB & pgvector",
+            "Week 4: Approximate Nearest Neighbor Search (HNSW) & Vector Index Benchmarking",
           ],
         },
         {
-          title: "Module 2: Production-Grade RAG Systems & Context Augmentation",
-          duration: "Weeks 3–4",
+          title: "Month 2: Enterprise RAG Systems, Hybrid Search & Knowledge Graphs",
+          duration: "Weeks 5–8",
           topics: [
-            "Retrieval-Augmented Generation (RAG) Architecture from Scratch",
-            "Advanced Chunking Strategies, Metadata Filtering & Semantic Caching",
-            "Hybrid Search (BM25 + Dense Vectors) & Neural Rerankers (Cohere/BGE)",
-            "GraphRAG & Knowledge Graphs for Multi-Hop Complex Question Answering",
+            "Week 5: Production RAG Pipelines: Semantic Chunking, Metadata Filters & Ingestion",
+            "Week 6: Hybrid Search (BM25 + Dense Vectors) with Cohere & BGE Neural Rerankers",
+            "Week 7: GraphRAG & Knowledge Graphs for Multi-Hop Complex Question Answering",
+            "Week 8: RAG Evaluation Frameworks (Ragas, TruLens) & Faithfulness Metrics",
           ],
         },
         {
-          title: "Module 3: Autonomous Multi-Agent Systems & Tool Orchestration",
-          duration: "Weeks 5–6",
+          title: "Month 3: Parameter-Efficient Fine-Tuning (PEFT/LoRA) & Alignment",
+          duration: "Weeks 9–12",
           topics: [
-            "Agentic Loops: ReAct Prompting, Function Calling & Structured JSON Outputs",
-            "Stateful Multi-Agent Orchestration with LangChain & LangGraph",
-            "Hierarchical Agent Teams with CrewAI & Multi-Agent Collaboration",
-            "Human-in-the-Loop Safeguards, Dynamic Memory & Tool Sandboxing",
+            "Week 9: Instruction Fine-Tuning Open-Weights LLMs with LoRA & QLoRA",
+            "Week 10: Synthetic Dataset Generation, Data De-duplication & Quality Filtering",
+            "Week 11: Preference Alignment with DPO (Direct Preference Optimization) & RLHF",
+            "Week 12: LLM Safety Guardrails, Jailbreak Defenses & Prompt Injection Mitigations",
           ],
         },
         {
-          title: "Module 4: Model Fine-Tuning (LoRA/QLoRA), Evaluation & Deployment",
-          duration: "Weeks 7–8",
+          title: "Month 4: Autonomous Multi-Agent Teams & Production Orchestration",
+          duration: "Weeks 13–16",
           topics: [
-            "Instruction Tuning & Parameter-Efficient Fine-Tuning (PEFT, LoRA, QLoRA)",
-            "Synthetic Dataset Generation, Data Cleaning & Alignment (DPO/RLHF)",
-            "LLM Observability, Cost Tracking & Tracing (LangSmith, Phoenix)",
-            "Capstone: Deploying a Multi-Agent Autonomous Research & Coding Assistant",
+            "Week 13: ReAct Loops, Tool Use, Function Calling & Structured JSON Schemas",
+            "Week 14: Stateful Multi-Agent Workflows & Graph Branching with LangGraph",
+            "Week 15: Hierarchical Agent Swarms with CrewAI & Human-in-the-Loop Approval Gates",
+            "Week 16: Production Capstone: Deploying an Autonomous Software Engineering Agent Team",
           ],
         },
       ];
 
     case "machine-learning-engineering":
+      // 3-Month Accelerator Track (12 Weeks)
       return [
         {
-          title: "Module 1: Classical Machine Learning & Algorithmic Foundations",
-          duration: "Weeks 1–2",
+          title: "Month 1: Classical Machine Learning & Algorithmic Foundations",
+          duration: "Weeks 1–4",
           topics: [
-            "Supervised Learning: Ridge/Lasso Regression, Logistic Regression & SVMs",
-            "Tree-Based Ensembles: Random Forests, Gradient Boosting & XGBoost/LightGBM",
-            "Unsupervised Learning: K-Means, DBSCAN, PCA & Dimensionality Reduction",
-            "Cross-Validation, Hyperparameter Optimization (Optuna) & Data Leakage Prevention",
+            "Week 1: Supervised Regression & Classification: Regularization (Ridge/Lasso) & SVMs",
+            "Week 2: Tree-Based Ensembles: Random Forests, Gradient Boosting & XGBoost/LightGBM",
+            "Week 3: Unsupervised Learning: K-Means, DBSCAN Clustering, PCA & UMAP",
+            "Week 4: Cross-Validation, Optuna Hyperparameter Tuning & Data Leakage Prevention",
           ],
         },
         {
-          title: "Module 2: Deep Learning Architectures & Neural Networks with PyTorch",
-          duration: "Weeks 3–4",
+          title: "Month 2: Deep Learning Architectures & PyTorch Foundations",
+          duration: "Weeks 5–8",
           topics: [
-            "PyTorch Tensors, Autograd & Building Custom Neural Network Layers",
-            "Activation Functions, Backpropagation, Learning Rate Schedulers & Optimizers (AdamW)",
-            "Convolutional Neural Networks (CNNs) & Modern Vision Transformers",
-            "Sequence Modeling: LSTMs, Transformers & Self-Supervised Pretraining",
+            "Week 5: PyTorch Tensors, Autograd & Building Custom Deep Neural Network Layers",
+            "Week 6: Activation Functions, Backpropagation, Learning Rate Schedulers & AdamW",
+            "Week 7: Convolutional Neural Networks (CNNs) & Modern Vision Transformers",
+            "Week 8: Sequence Modeling, LSTMs & Self-Supervised Representation Learning",
           ],
         },
         {
-          title: "Module 3: End-to-End MLOps & Reproducible Pipelines",
-          duration: "Weeks 5–6",
+          title: "Month 3: End-to-End MLOps, Model Serving & Cloud Inference",
+          duration: "Weeks 9–12",
           topics: [
-            "Experiment Tracking, Metric Logging & Artifact Storage with MLflow",
-            "Feature Store Engineering & Data Version Control with DVC",
-            "Continuous Training (CT) Pipelines & Automated Model Validation",
-            "Data Drift & Concept Drift Detection with Evidently AI",
-          ],
-        },
-        {
-          title: "Module 4: High-Performance Model Serving & Cloud Inference",
-          duration: "Weeks 7–8",
-          topics: [
-            "Containerizing PyTorch/Scikit-Learn Models with Docker",
-            "High-Throughput Model Serving with FastAPI, Uvicorn & Async Workers",
-            "Model Optimization: Quantization, Pruning & ONNX Runtime Acceleration",
-            "Capstone: Deploying a Real-Time Fraud Detection ML Microservice with Live Monitoring",
+            "Week 9: Experiment Tracking, Artifact Storage & Model Registry with MLflow",
+            "Week 10: Feature Store Architecture & Dataset Version Control with DVC",
+            "Week 11: Containerizing ML Models with Docker & High-Throughput FastAPI Async Serving",
+            "Week 12: Production Capstone: Real-Time Fraud Detection Engine with Live Drift Monitoring",
           ],
         },
       ];
 
     case "fullstack-web-cloud-development":
+      // 4-Month Comprehensive Track (16 Weeks)
       return [
         {
-          title: "Module 1: Modern Frontend Architecture with Next.js & React 19",
-          duration: "Weeks 1–2",
+          title: "Month 1: Modern Frontend Architecture, React 19 & Next.js",
+          duration: "Weeks 1–4",
           topics: [
-            "React 19 Foundations: Server Components, Actions, Suspense & Streaming",
-            "Next.js App Router Architecture: Layouts, Route Handlers & Parallel Routing",
-            "Enterprise State Management & Optimistic UI Updates",
-            "Tailwind CSS, Component Design Systems & Responsive Accessibility (a11y)",
+            "Week 1: React 19 Foundations: Server Components, Server Actions & Streaming SSR",
+            "Week 2: Next.js App Router Architecture: Nested Layouts, Route Groups & Parallel Routes",
+            "Week 3: Advanced TypeScript: Strict Generics, Utility Types & Zod Schema Validation",
+            "Week 4: Responsive Design Systems with Tailwind CSS & Web Accessibility (WCAG/a11y)",
           ],
         },
         {
-          title: "Module 2: Enterprise Backend APIs & PostgreSQL Database Design",
-          duration: "Weeks 3–4",
+          title: "Month 2: Scalable Node.js Backends, GraphQL & Relational Databases",
+          duration: "Weeks 5–8",
           topics: [
-            "RESTful & GraphQL API Architecture in Node.js / TypeScript",
-            "Relational Schema Design, Normalization & Indexing in PostgreSQL",
-            "Type-Safe ORM Modeling, Migrations & Transactions with Prisma",
-            "In-Memory Caching, Rate-Limiting & Session Management with Redis",
+            "Week 5: Enterprise REST & GraphQL API Architecture in Node.js & Express",
+            "Week 6: PostgreSQL Database Design: Normalization, Foreign Keys & Compound Indexes",
+            "Week 7: Type-Safe ORM Modeling, Migrations, Seeders & Transactions with Prisma",
+            "Week 8: High-Performance Database Query Tuning & Connection Pooling (PgBouncer)",
           ],
         },
         {
-          title: "Module 3: Authentication, Cryptographic Security & System Resilience",
-          duration: "Weeks 5–6",
+          title: "Month 3: Microservices, Redis Caching & Application Security",
+          duration: "Weeks 9–12",
           topics: [
-            "Secure Auth Flows: OAuth 2.0, Refresh Tokens, Magic Links & Argon2 Hashing",
-            "Role-Based Access Control (RBAC), Row Level Security & CSRF/XSS Mitigation",
-            "Background Job Queues, Webhook Listeners & Resilient Async Processing",
-            "API Gateway Patterns, Schema Validation with Zod & Error Boundaries",
+            "Week 9: In-Memory Caching & Distributed Session Storage with Redis",
+            "Week 10: Stateful Authentication (OAuth 2.0, HTTP-Only Cookies, JWT & Argon2id)",
+            "Week 11: Webhook Listeners, Event-Driven Architecture & Asynchronous Job Queues (BullMQ)",
+            "Week 12: Application Security: CSRF, XSS, Row Level Security (RLS) & Rate Limiting",
           ],
         },
         {
-          title: "Module 4: Cloud Infrastructure, Containerization & CI/CD Pipelines",
-          duration: "Weeks 7–8",
+          title: "Month 4: Cloud Containerization, Docker, Kubernetes & Production Capstone",
+          duration: "Weeks 13–16",
           topics: [
-            "Multi-Stage Docker Containers, Docker Compose & Local Dev Parity",
-            "Automated GitHub Actions CI/CD: Linting, Unit/Integration Tests & Builds",
-            "Zero-Downtime Cloud Deployments on Vercel, AWS ECS & Managed PostgreSQL",
-            "Capstone: Launching a Full-Stack Multi-Tenant SaaS Platform with Stripe Billing",
+            "Week 13: Optimized Multi-Stage Docker Builds & Local Orchestration with Docker Compose",
+            "Week 14: Automated CI/CD Pipelines with GitHub Actions (Linting, Tests, Image Publishing)",
+            "Week 15: Cloud Deployment on AWS ECS, Vercel & Managed PostgreSQL Databases",
+            "Week 16: Production Capstone: Building & Launching a Full-Stack Multi-Tenant SaaS Platform",
           ],
         },
       ];

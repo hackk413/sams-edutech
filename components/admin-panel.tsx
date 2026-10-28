@@ -11,6 +11,7 @@ import type {
   AssessmentSubmission,
   StudentProfileAdminView,
   AdminAuditLog,
+  CoursePricingConfig,
 } from "@/lib/types";
 
 interface AdminPanelProps {
@@ -19,6 +20,7 @@ interface AdminPanelProps {
   initialSubmissions: AssessmentSubmission[];
   initialStudents: StudentProfileAdminView[];
   initialAuditLogs: AdminAuditLog[];
+  initialPricing?: Record<string, CoursePricingConfig>;
 }
 
 export function AdminPanel({
@@ -27,6 +29,7 @@ export function AdminPanel({
   initialSubmissions,
   initialStudents,
   initialAuditLogs,
+  initialPricing = {},
 }: AdminPanelProps) {
   const router = useRouter();
   const [authenticated, setAuthenticated] = useState(initialAuthenticated);
@@ -46,7 +49,7 @@ export function AdminPanel({
   }, [authenticated]);
 
   // Active module tab
-  const [activeTab, setActiveTab] = useState<"overview" | "assessments" | "submissions" | "students" | "security">("overview");
+  const [activeTab, setActiveTab] = useState<"overview" | "assessments" | "submissions" | "students" | "pricing" | "security">("overview");
 
   // Assessments state
   const [assessments, setAssessments] = useState<WeeklyAssessment[]>(initialAssessments);
@@ -72,6 +75,41 @@ export function AdminPanel({
   const [newObjectives, setNewObjectives] = useState("Map target attack surface\nExecute defensive audit");
   const [newDeliverables, setNewDeliverables] = useState("GitHub repository with code\nPDF summary of findings");
   const [newRepoUrl, setNewRepoUrl] = useState("");
+
+  // Edit Assessment state
+  const [editingAssessment, setEditingAssessment] = useState<WeeklyAssessment | null>(null);
+  const [editWeek, setEditWeek] = useState(1);
+  const [editCourseId, setEditCourseId] = useState("");
+  const [editCourseTitle, setEditCourseTitle] = useState("");
+  const [editTitle, setEditTitle] = useState("");
+  const [editDifficulty, setEditDifficulty] = useState<"Beginner" | "Intermediate" | "Advanced">("Intermediate");
+  const [editMaxPoints, setEditMaxPoints] = useState(100);
+  const [editDueDate, setEditDueDate] = useState("");
+  const [editDesc, setEditDesc] = useState("");
+  const [editObjectives, setEditObjectives] = useState("");
+  const [editDeliverables, setEditDeliverables] = useState("");
+  const [editRepoUrl, setEditRepoUrl] = useState("");
+  const [updatingAssessment, setUpdatingAssessment] = useState(false);
+  const [editAssessmentError, setEditAssessmentError] = useState("");
+
+  // Course Pricing state
+  const [pricingMap, setPricingMap] = useState<Record<string, CoursePricingConfig>>(() => {
+    const map: Record<string, CoursePricingConfig> = { ...initialPricing };
+    COURSES.forEach((c) => {
+      if (!map[c.slug]) {
+        map[c.slug] = {
+          slug: c.slug,
+          price: c.price ?? 499,
+          original_price: c.original_price ?? 799,
+          discount_percent: c.discount_percent ?? 35,
+          active: true,
+        };
+      }
+    });
+    return map;
+  });
+  const [savingPricingSlug, setSavingPricingSlug] = useState<string | null>(null);
+  const [pricingFeedback, setPricingFeedback] = useState<string>("");
 
   // Submissions & Grading state
   const [submissions, setSubmissions] = useState<AssessmentSubmission[]>(initialSubmissions);
@@ -165,6 +203,102 @@ export function AdminPanel({
       router.refresh();
     } catch {
       alert("Could not delete assessment.");
+    }
+  }
+
+  function openEditAssessment(a: WeeklyAssessment) {
+    setEditingAssessment(a);
+    setEditWeek(a.week_number);
+    setEditCourseId(a.course_id);
+    setEditCourseTitle(a.course_title);
+    setEditTitle(a.title);
+    setEditDifficulty(a.difficulty);
+    setEditMaxPoints(a.max_points);
+    setEditDueDate(a.due_date ? a.due_date.slice(0, 10) : "");
+    setEditDesc(a.description);
+    setEditObjectives((a.objectives || []).join("\n"));
+    setEditDeliverables((a.deliverables || []).join("\n"));
+    setEditRepoUrl(a.starter_repo_url || "");
+    setEditAssessmentError("");
+  }
+
+  async function handleUpdateAssessment(e: React.FormEvent) {
+    e.preventDefault();
+    if (!editingAssessment) return;
+    setEditAssessmentError("");
+    setUpdatingAssessment(true);
+    try {
+      const res = await fetch("/api/admin/assessments", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: editingAssessment.id,
+          week_number: Number(editWeek),
+          course_id: editCourseId,
+          course_title: editCourseTitle,
+          title: editTitle,
+          difficulty: editDifficulty,
+          max_points: Number(editMaxPoints),
+          due_date: new Date(editDueDate).toISOString(),
+          description: editDesc,
+          objectives: editObjectives.split("\n").map((s) => s.trim()).filter(Boolean),
+          deliverables: editDeliverables.split("\n").map((s) => s.trim()).filter(Boolean),
+          starter_repo_url: editRepoUrl || null,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to update assessment.");
+
+      setAssessments((prev) =>
+        prev.map((item) => (item.id === editingAssessment.id ? data.assessment : item))
+      );
+      setEditingAssessment(null);
+      router.refresh();
+    } catch (err: unknown) {
+      setEditAssessmentError(err instanceof Error ? err.message : "Error updating assessment");
+    } finally {
+      setUpdatingAssessment(false);
+    }
+  }
+
+  // ── COURSE PRICING HANDLERS ──
+  function updatePricingField(slug: string, field: "original_price" | "discount_percent", value: number) {
+    setPricingMap((prev) => {
+      const current = prev[slug] || {
+        slug,
+        price: 499,
+        original_price: 799,
+        discount_percent: 35,
+        active: true,
+      };
+      const updated = { ...current, [field]: value };
+      const orig = field === "original_price" ? value : updated.original_price;
+      const disc = field === "discount_percent" ? value : updated.discount_percent;
+      updated.price = Math.max(0, Math.round(orig * (1 - disc / 100)));
+      return { ...prev, [slug]: updated };
+    });
+  }
+
+  async function handleSavePricing(slug: string) {
+    const config = pricingMap[slug];
+    if (!config) return;
+    setSavingPricingSlug(slug);
+    setPricingFeedback("");
+    try {
+      const res = await fetch("/api/admin/courses/pricing", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(config),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to save pricing");
+      setPricingFeedback(`Pricing for ${slug} updated successfully!`);
+      setTimeout(() => setPricingFeedback(""), 4000);
+      router.refresh();
+    } catch (err: unknown) {
+      alert(err instanceof Error ? err.message : "Error saving course price");
+    } finally {
+      setSavingPricingSlug(null);
     }
   }
 
@@ -354,6 +488,13 @@ export function AdminPanel({
             onClick={() => setActiveTab("students")}
           >
             <Icon name="user" size={15} /> Student Profiles ({students.length})
+          </button>
+          <button
+            type="button"
+            className={`admin-tab-btn ${activeTab === "pricing" ? "active" : ""}`}
+            onClick={() => setActiveTab("pricing")}
+          >
+            <Icon name="spark" size={15} /> Course Pricing &amp; Discounts
           </button>
           <button
             type="button"
@@ -593,6 +734,14 @@ export function AdminPanel({
                             <div style={{ display: "flex", gap: 6 }}>
                               <button
                                 type="button"
+                                className="btn btn-secondary btn-sm"
+                                onClick={() => openEditAssessment(a)}
+                                title="Edit weekly assessment"
+                              >
+                                Edit
+                              </button>
+                              <button
+                                type="button"
                                 className="btn btn-ghost btn-sm text-danger"
                                 onClick={() => handleDeleteAssessment(a.id)}
                                 title="Delete assessment"
@@ -758,6 +907,163 @@ export function AdminPanel({
                         style={{ width: "100%", justifyContent: "center" }}
                       >
                         {creating ? "Broadcasting to Cohort..." : "Publish Assessment Instantly"}
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            )}
+
+            {/* EDIT ASSESSMENT MODAL */}
+            {editingAssessment && (
+              <div className="modal-backdrop" onClick={() => !updatingAssessment && setEditingAssessment(null)}>
+                <div className="modal-card modal-card-lg" onClick={(e) => e.stopPropagation()}>
+                  <div className="modal-header">
+                    <div>
+                      <span className="sec-eyebrow">Modify Curriculum &amp; Timeline</span>
+                      <h3 style={{ margin: "2px 0 0", fontSize: "1.25rem", fontWeight: 800 }}>
+                        Edit Weekly Assessment: Week {editingAssessment.week_number}
+                      </h3>
+                    </div>
+                    <button
+                      type="button"
+                      className="modal-close-btn"
+                      onClick={() => !updatingAssessment && setEditingAssessment(null)}
+                      aria-label="Close"
+                    >
+                      &times;
+                    </button>
+                  </div>
+
+                  <form onSubmit={handleUpdateAssessment} style={{ marginTop: 18 }}>
+                    {editAssessmentError && <div className="form-error" role="alert" style={{ marginBottom: 14 }}>{editAssessmentError}</div>}
+
+                    <div className="form-grid">
+                      <div className="field">
+                        <label>Week Number *</label>
+                        <input
+                          type="number"
+                          min={1}
+                          max={52}
+                          value={editWeek}
+                          onChange={(e) => setEditWeek(Number(e.target.value))}
+                          required
+                        />
+                      </div>
+
+                      <div className="field">
+                        <label>Associated Program Track *</label>
+                        <select
+                          value={editCourseId}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setEditCourseId(val);
+                            const found = COURSES.find((c) => c.slug === val);
+                            if (found) setEditCourseTitle(found.title);
+                            else if (val === "all") setEditCourseTitle("Universal Cohort Track");
+                          }}
+                        >
+                          <option value="all">Universal Cohort Track (All Programs)</option>
+                          {COURSES.map((c) => (
+                            <option key={c.slug} value={c.slug}>
+                              {c.title} ({c.duration_months} Months)
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div className="field full">
+                        <label>Assessment Title *</label>
+                        <input
+                          type="text"
+                          value={editTitle}
+                          onChange={(e) => setEditTitle(e.target.value)}
+                          placeholder="e.g. SOC Lab: Incident Triage & Sigma Rules"
+                          required
+                        />
+                      </div>
+
+                      <div className="field">
+                        <label>Difficulty Tier</label>
+                        <select
+                          value={editDifficulty}
+                          onChange={(e) => setEditDifficulty(e.target.value as "Beginner" | "Intermediate" | "Advanced")}
+                        >
+                          <option>Beginner</option>
+                          <option>Intermediate</option>
+                          <option>Advanced</option>
+                        </select>
+                      </div>
+
+                      <div className="field">
+                        <label>Maximum Points</label>
+                        <input
+                          type="number"
+                          min={10}
+                          max={500}
+                          value={editMaxPoints}
+                          onChange={(e) => setEditMaxPoints(Number(e.target.value))}
+                          required
+                        />
+                      </div>
+
+                      <div className="field">
+                        <label>Due Date *</label>
+                        <input
+                          type="date"
+                          value={editDueDate}
+                          onChange={(e) => setEditDueDate(e.target.value)}
+                          required
+                        />
+                      </div>
+
+                      <div className="field">
+                        <label>Starter Repository URL (optional)</label>
+                        <input
+                          type="url"
+                          placeholder="https://github.com/sams-edutech/starter-lab"
+                          value={editRepoUrl}
+                          onChange={(e) => setEditRepoUrl(e.target.value)}
+                        />
+                      </div>
+
+                      <div className="field full">
+                        <label>Problem Description &amp; Scenario *</label>
+                        <textarea
+                          rows={4}
+                          value={editDesc}
+                          onChange={(e) => setEditDesc(e.target.value)}
+                          required
+                        />
+                      </div>
+
+                      <div className="field">
+                        <label>Key Learning Objectives (one per line)</label>
+                        <textarea
+                          rows={3}
+                          value={editObjectives}
+                          onChange={(e) => setEditObjectives(e.target.value)}
+                        />
+                      </div>
+
+                      <div className="field">
+                        <label>Expected Deliverables (one per line)</label>
+                        <textarea
+                          rows={3}
+                          value={editDeliverables}
+                          onChange={(e) => setEditDeliverables(e.target.value)}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="modal-actions" style={{ marginTop: 20 }}>
+                      <button
+                        type="submit"
+                        className="btn btn-orange"
+                        disabled={updatingAssessment}
+                        style={{ width: "100%", justifyContent: "center" }}
+                      >
+                        {updatingAssessment ? "Saving Changes..." : "Save Assessment Changes"}
                       </button>
                     </div>
                   </form>
@@ -1021,73 +1327,83 @@ export function AdminPanel({
             </div>
 
             <div className="card" style={{ padding: 20 }}>
-              <div className="table-responsive">
-                <table className="admin-table">
-                  <thead>
-                    <tr>
-                      <th>Student Identity</th>
-                      <th>Role &amp; Verification</th>
-                      <th>Enrolled Programs</th>
-                      <th>Assignments</th>
-                      <th>Average Score</th>
-                      <th>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredStudents.map((st) => (
-                      <tr key={st.id}>
-                        <td>
-                          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                            <div className="mini-avatar">
-                              {st.full_name ? st.full_name.slice(0, 2).toUpperCase() : "ST"}
-                            </div>
-                            <div>
-                              <strong>{st.full_name}</strong>
-                              <div className="small-hint">{st.email}</div>
-                            </div>
-                          </div>
-                        </td>
-                        <td>
-                          <span className="status-badge-verified">
-                            <Icon name="check" size={11} /> {st.role === "admin" ? "Admin" : "Verified Student"}
-                          </span>
-                        </td>
-                        <td>
-                          {st.enrolled_courses.length === 0 ? (
-                            <span className="small-hint">No active courses</span>
-                          ) : (
-                            st.enrolled_courses.map((c) => (
-                              <div key={c.id} className="small-course-chip">
-                                {c.title} ({c.progress}%)
-                              </div>
-                            ))
-                          )}
-                        </td>
-                        <td>
-                          <strong>{st.submissions_count}</strong> submitted
-                          <div className="small-hint">{st.graded_count} graded</div>
-                        </td>
-                        <td>
-                          {st.average_score !== null ? (
-                            <strong style={{ color: "var(--blue)" }}>{st.average_score}%</strong>
-                          ) : (
-                            <span className="small-hint">Pending</span>
-                          )}
-                        </td>
-                        <td>
-                          <button
-                            type="button"
-                            className="btn btn-secondary btn-sm"
-                            onClick={() => setSelectedStudent(st)}
-                          >
-                            Inspect Dossier
-                          </button>
-                        </td>
+              {filteredStudents.length === 0 ? (
+                <div className="empty" style={{ padding: 48, textAlign: "center" }}>
+                  <Icon name="user" size={32} />
+                  <h3 style={{ marginTop: 12 }}>No Registered Students Found</h3>
+                  <p style={{ color: "var(--muted)", fontSize: "0.88rem", maxWidth: 460, margin: "8px auto 0" }}>
+                    Real student accounts will appear here automatically when learners sign up via Supabase authentication. All dummy/demo data has been removed.
+                  </p>
+                </div>
+              ) : (
+                <div className="table-responsive">
+                  <table className="admin-table">
+                    <thead>
+                      <tr>
+                        <th>Student Identity</th>
+                        <th>Role &amp; Verification</th>
+                        <th>Enrolled Programs</th>
+                        <th>Assignments</th>
+                        <th>Average Score</th>
+                        <th>Actions</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                    </thead>
+                    <tbody>
+                      {filteredStudents.map((st) => (
+                        <tr key={st.id}>
+                          <td>
+                            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                              <div className="mini-avatar">
+                                {st.full_name ? st.full_name.slice(0, 2).toUpperCase() : "ST"}
+                              </div>
+                              <div>
+                                <strong>{st.full_name}</strong>
+                                <div className="small-hint">{st.email}</div>
+                              </div>
+                            </div>
+                          </td>
+                          <td>
+                            <span className="status-badge-verified">
+                              <Icon name="check" size={11} /> {st.role === "admin" ? "Admin" : "Verified Student"}
+                            </span>
+                          </td>
+                          <td>
+                            {st.enrolled_courses.length === 0 ? (
+                              <span className="small-hint">No active courses</span>
+                            ) : (
+                              st.enrolled_courses.map((c) => (
+                                <div key={c.id} className="small-course-chip">
+                                  {c.title} ({c.progress}%)
+                                </div>
+                              ))
+                            )}
+                          </td>
+                          <td>
+                            <strong>{st.submissions_count}</strong> submitted
+                            <div className="small-hint">{st.graded_count} graded</div>
+                          </td>
+                          <td>
+                            {st.average_score !== null ? (
+                              <strong style={{ color: "var(--blue)" }}>{st.average_score}%</strong>
+                            ) : (
+                              <span className="small-hint">Pending</span>
+                            )}
+                          </td>
+                          <td>
+                            <button
+                              type="button"
+                              className="btn btn-secondary btn-sm"
+                              onClick={() => setSelectedStudent(st)}
+                            >
+                              Inspect Dossier
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
 
             {/* STUDENT DOSSIER MODAL */}
@@ -1146,6 +1462,145 @@ export function AdminPanel({
                 </div>
               </div>
             )}
+          </div>
+        )}
+
+        {/* ── TAB 5: COURSE PRICING & DISCOUNTS ── */}
+        {activeTab === "pricing" && (
+          <div>
+            <div className="section-bar" style={{ marginBottom: 20 }}>
+              <div>
+                <h2 style={{ margin: 0, fontSize: "1.35rem", fontWeight: 800 }}>Course Pricing &amp; Percentage Discounts</h2>
+                <p style={{ margin: 0, color: "var(--muted)", fontSize: "0.86rem" }}>
+                  Adjust tuition prices, promotional discount percentages, and active deals across all programs in real-time without modifying website source code.
+                </p>
+              </div>
+              {pricingFeedback && (
+                <div className="status-pill status-pill-green" style={{ padding: "8px 14px", fontWeight: 700 }}>
+                  <Icon name="check" size={14} /> {pricingFeedback}
+                </div>
+              )}
+            </div>
+
+            <div style={{ display: "grid", gap: 20 }}>
+              {COURSES.map((course) => {
+                const conf = pricingMap[course.slug] || {
+                  slug: course.slug,
+                  price: course.price ?? 499,
+                  original_price: course.original_price ?? 799,
+                  discount_percent: course.discount_percent ?? 35,
+                  active: true,
+                };
+                const isSaving = savingPricingSlug === course.slug;
+
+                return (
+                  <div key={course.slug} className="card" style={{ padding: 24, display: "grid", gridTemplateColumns: "1fr auto", gap: 24, alignItems: "center" }}>
+                    <div>
+                      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
+                        <span className={`plan-pill ${course.duration_months === 4 ? "plan-pill-comprehensive" : "plan-pill-accelerator"}`}>
+                          {course.duration_months} Months Plan
+                        </span>
+                        <span style={{ fontSize: "0.78rem", color: "var(--muted)", fontWeight: 700, textTransform: "uppercase" }}>
+                          {course.category}
+                        </span>
+                      </div>
+                      <h3 style={{ margin: "0 0 6px", fontSize: "1.2rem", fontWeight: 800 }}>{course.title}</h3>
+                      <p style={{ margin: 0, color: "var(--muted)", fontSize: "0.86rem", maxWidth: 650 }}>
+                        {course.description}
+                      </p>
+
+                      {/* Live Price Preview */}
+                      <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 16 }}>
+                        <span style={{ fontSize: "0.82rem", fontWeight: 700, color: "var(--muted)" }}>Student Live Price:</span>
+                        <span style={{ fontSize: "1.45rem", fontWeight: 900, color: "var(--blue)" }}>
+                          ${conf.price}
+                        </span>
+                        {conf.original_price > conf.price && (
+                          <span style={{ fontSize: "1rem", color: "var(--muted)", textDecoration: "line-through", fontWeight: 600 }}>
+                            ${conf.original_price}
+                          </span>
+                        )}
+                        {conf.discount_percent > 0 && (
+                          <span className="discount-pill">
+                            {conf.discount_percent}% OFF
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Pricing Edit Form Controls */}
+                    <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius)", padding: 18, minWidth: 280 }}>
+                      <div style={{ display: "grid", gap: 12 }}>
+                        <div>
+                          <label style={{ display: "block", fontSize: "0.76rem", fontWeight: 800, textTransform: "uppercase", color: "var(--muted)", marginBottom: 4 }}>
+                            Original Price ($ USD)
+                          </label>
+                          <input
+                            type="number"
+                            min={0}
+                            step={1}
+                            value={conf.original_price}
+                            onChange={(e) => updatePricingField(course.slug, "original_price", Number(e.target.value))}
+                            style={{ width: "100%", height: 38 }}
+                          />
+                        </div>
+
+                        <div>
+                          <label style={{ display: "block", fontSize: "0.76rem", fontWeight: 800, textTransform: "uppercase", color: "var(--muted)", marginBottom: 4 }}>
+                            Discount Percentage (%)
+                          </label>
+                          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                            <input
+                              type="number"
+                              min={0}
+                              max={100}
+                              step={1}
+                              value={conf.discount_percent}
+                              onChange={(e) => updatePricingField(course.slug, "discount_percent", Number(e.target.value))}
+                              style={{ width: "100%", height: 38 }}
+                            />
+                            <span style={{ fontWeight: 800, fontSize: "0.9rem", color: "var(--muted)" }}>%</span>
+                          </div>
+                        </div>
+
+                        <div>
+                          <label style={{ display: "block", fontSize: "0.76rem", fontWeight: 800, textTransform: "uppercase", color: "var(--muted)", marginBottom: 4 }}>
+                            Calculated Final Price ($ USD)
+                          </label>
+                          <input
+                            type="number"
+                            min={0}
+                            step={1}
+                            value={conf.price}
+                            onChange={(e) => {
+                              const p = Number(e.target.value);
+                              setPricingMap((prev) => ({
+                                ...prev,
+                                [course.slug]: {
+                                  ...conf,
+                                  price: p,
+                                },
+                              }));
+                            }}
+                            style={{ width: "100%", height: 38, fontWeight: 800, color: "var(--blue)" }}
+                          />
+                        </div>
+
+                        <button
+                          type="button"
+                          className="btn btn-orange btn-sm"
+                          disabled={isSaving}
+                          onClick={() => handleSavePricing(course.slug)}
+                          style={{ width: "100%", justifyContent: "center", marginTop: 4 }}
+                        >
+                          {isSaving ? "Saving Live Changes..." : "Save Pricing & Discount"}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         )}
 

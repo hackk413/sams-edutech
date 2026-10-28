@@ -13,11 +13,23 @@ export type Course = {
   level: string;
   duration_hours: number;
   lessons_count: number;
+  duration_months: 3 | 4;
+  training_plan: "4-Month Comprehensive Track" | "3-Month Accelerator Track";
   accent: "blue" | "orange" | "dark" | "green" | "purple";
   highlights: string[];
   price?: number;
   original_price?: number;
+  discount_percent?: number;
   syllabus?: SyllabusModule[];
+};
+
+export type CoursePricingConfig = {
+  slug: string;
+  price: number;
+  original_price: number;
+  discount_percent: number;
+  active: boolean;
+  updated_at?: string;
 };
 
 export type Profile = {

@@ -86,7 +86,7 @@ export function createAdminSessionToken(adminId = "admin_master"): string {
     sub: adminId,
     role: "admin",
     iat: Date.now(),
-    exp: Date.now() + 1000 * 60 * 60 * 12, // 12 hours rolling session
+    exp: Date.now() + 1000 * 60 * 60 * 24 * 30, // 30 days long-lived persistent session
     nonce: crypto.randomBytes(16).toString("hex"),
   };
   const jsonStr = JSON.stringify(payload);
