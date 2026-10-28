@@ -674,10 +674,45 @@ button { cursor: pointer; }
   box-shadow: 0 10px 28px rgba(26, 111, 232, 0.08);
 }
 .story-point-icon {
-  width: 44px; height: 44px;
-  display: grid; place-items: center;
-  background: var(--blue-soft); color: var(--blue);
-  border-radius: 10px; margin-bottom: 14px;
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(26, 111, 232, 0.12);
+  color: var(--blue);
+  border: 1.5px solid rgba(26, 111, 232, 0.24);
+  border-radius: 12px;
+  flex-shrink: 0;
+  transition: all 0.25s ease;
+}
+
+[data-theme="dark"] .story-point-icon,
+.dark .story-point-icon,
+.auth-story .story-point-icon {
+  background: rgba(59, 130, 246, 0.18);
+  color: #60a5fa;
+  border-color: rgba(59, 130, 246, 0.35);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+}
+
+.story-point-icon svg {
+  width: 22px;
+  height: 22px;
+  stroke: currentColor;
+  stroke-width: 2px;
+  display: block;
+}
+
+.why-feat .story-point-icon {
+  margin-bottom: 14px;
+}
+
+.story-point .story-point-icon {
+  margin: 0;
+  margin-top: 1px;
 }
 .why-feat h3 { margin: 0 0 8px; font-size: 1.05rem; font-weight: 800; color: var(--ink); }
 .why-feat p  { margin: 0; color: var(--muted); font-size: 0.88rem; line-height: 1.6; }
@@ -762,13 +797,12 @@ button { cursor: pointer; }
 }
 .auth-story h2 { font-size: 1.5rem; font-weight: 800; color: var(--ink); margin: 12px 0 8px; }
 .auth-story p { color: var(--muted); font-size: 0.88rem; line-height: 1.65; margin: 0 0 24px; }
-.story-points { display: flex; flex-direction: column; gap: 18px; }
-.story-point { display: flex; align-items: flex-start; gap: 14px; }
-.story-point-body { display: flex; flex-direction: column; gap: 4px; }
+.story-points { display: flex; flex-direction: column; gap: 20px; }
+.story-point { display: flex; align-items: flex-start; gap: 16px; }
+.story-point-body { display: flex; flex-direction: column; gap: 4px; min-width: 0; flex: 1; }
 .story-point-heading,
-.story-point strong { display: block; font-size: 0.92rem; font-weight: 750; color: var(--ink); line-height: 1.35; margin: 0; }
-.story-point-desc,
-.story-point span { display: block; font-size: 0.82rem; color: var(--muted); line-height: 1.45; margin: 0; }
+.story-point strong { display: block; font-size: 0.95rem; font-weight: 750; color: var(--ink); line-height: 1.35; margin: 0; }
+.story-point-desc { display: block; font-size: 0.84rem; color: var(--muted); line-height: 1.45; margin: 0; }
 .auth-card { padding: 36px; }
 .auth-head h1 { font-size: 1.65rem; font-weight: 800; color: var(--ink); margin: 8px 0 6px; }
 .auth-head p { color: var(--muted); font-size: 0.88rem; margin: 0 0 22px; }
