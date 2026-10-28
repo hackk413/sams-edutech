@@ -909,6 +909,7 @@ export function recordRealStudent(student: {
   full_name?: string | null;
   email: string;
   username?: string | null;
+  phone_number?: string | null;
   bio?: string | null;
   avatar_url?: string | null;
   role?: string;
@@ -923,6 +924,7 @@ export function recordRealStudent(student: {
     id: student.id,
     full_name: student.full_name || student.email.split("@")[0],
     email: student.email,
+    phone_number: student.phone_number || existing?.phone_number || null,
     username: student.username || student.email.split("@")[0],
     bio: student.bio || existing?.bio || "Active platform learner",
     avatar_url: student.avatar_url || existing?.avatar_url || null,
@@ -980,10 +982,11 @@ export async function getStudentProfilesAdmin(): Promise<StudentProfileAdminView
       studentProfiles.push({
         id: p.id,
         full_name: p.full_name || p.username || "Registered Student",
-        email: p.email || (p.username ? `${p.username}@student.samsedutech.in` : "student@samsedutech.in"),
+        email: p.email || (p.username ? `${p.username}@gmail.com` : "student@gmail.com"),
+        phone_number: p.phone_number || null,
         username: p.username,
         bio: p.bio,
-        avatar_url: p.avatar_url,
+        avatar_url: p.avatar_url || null,
         role: p.role || "student",
         created_at: p.created_at || new Date().toISOString(),
         enrollments_count: userEnrollments.length,

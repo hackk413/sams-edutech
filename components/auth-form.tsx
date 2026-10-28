@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { Icon } from "@/components/icon";
-import { safeNextPath } from "@/lib/utils";
+import { safeNextPath, isGmailAddress, validateIndianPhoneNumber } from "@/lib/utils";
 
 const MIN_PASSWORD_LENGTH = 10;
 
@@ -28,10 +28,17 @@ export function LoginForm({ next, initialError }: { next?: string; initialError?
   async function submit(event: FormEvent) {
     event.preventDefault();
     setError("");
+
+    const trimmedEmail = email.trim().toLowerCase();
+    if (!isGmailAddress(trimmedEmail)) {
+      setError("Only Gmail accounts (@gmail.com) are accepted for signing in.");
+      return;
+    }
+
     setLoading(true);
     try {
       const supabase = createClient();
-      const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
+      const { error } = await supabase.auth.signInWithPassword({ email: trimmedEmail, password });
       if (error) { setError(friendlyAuthError(error.message)); return; }
       router.push(safeNextPath(next));
       router.refresh();
@@ -44,16 +51,20 @@ export function LoginForm({ next, initialError }: { next?: string; initialError?
     <form className="auth-form" onSubmit={submit} noValidate>
       {error && <div className="form-error" role="alert">{error}</div>}
       <div className="field">
-        <label htmlFor="email">Email address</label>
+        <label htmlFor="email">Gmail address</label>
         <input
           id="email"
           type="email"
           autoComplete="email"
           inputMode="email"
+          placeholder="yourname@gmail.com"
           value={email}
           onChange={(event) => setEmail(event.target.value)}
           required
         />
+        <span style={{ color: "var(--muted)", fontSize: "0.72rem" }}>
+          Only official @gmail.com accounts are permitted.
+        </span>
       </div>
       <div className="field">
         <label htmlFor="password">Password</label>
@@ -79,6 +90,7 @@ export function LoginForm({ next, initialError }: { next?: string; initialError?
 export function RegisterForm() {
   const router = useRouter();
   const [fullName, setFullName] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
@@ -90,24 +102,56 @@ export function RegisterForm() {
     event.preventDefault();
     setError("");
     setSuccess("");
+
     if (fullName.trim().length < 2) return setError("Please enter your full name.");
+
+    // Strict Gmail check
+    const trimmedEmail = email.trim().toLowerCase();
+    if (!isGmailAddress(trimmedEmail)) {
+      return setError("Only Gmail accounts (@gmail.com) are accepted for student registration.");
+    }
+
+    // Strict Indian phone number check
+    const phoneCheck = validateIndianPhoneNumber(phoneNumber);
+    if (!phoneCheck.isValid) {
+      return setError(phoneCheck.error || "Please enter a valid 10-digit Indian mobile number (+91).");
+    }
+
     if (password.length < MIN_PASSWORD_LENGTH) return setError(`Use a password with at least ${MIN_PASSWORD_LENGTH} characters.`);
     if (password !== confirm) return setError("Passwords do not match.");
+
     setLoading(true);
     try {
       const supabase = createClient();
       const origin = window.location.origin;
       const { data, error } = await supabase.auth.signUp({
-        email: email.trim(),
+        email: trimmedEmail,
         password,
         options: {
-          data: { full_name: fullName.trim() },
+          data: {
+            full_name: fullName.trim(),
+            phone_number: phoneCheck.normalized,
+          },
           emailRedirectTo: `${origin}/auth/callback?next=/dashboard`,
         },
       });
       if (error) { setError(friendlyAuthError(error.message)); return; }
+
+      // Also upsert profile directly if session is active
+      if (data.user?.id) {
+        try {
+          await supabase.from("profiles").upsert({
+            id: data.user.id,
+            full_name: fullName.trim(),
+            phone_number: phoneCheck.normalized,
+          });
+        } catch {
+          // Handled by trigger
+        }
+      }
+
       if (data.session) { router.push("/dashboard"); router.refresh(); return; }
-      setSuccess("Account created. Check your email to verify your account, then sign in.");
+      setSuccess("Account created. Check your Gmail inbox to verify your account, then sign in.");
     } finally {
       setLoading(false);
     }
@@ -129,16 +173,36 @@ export function RegisterForm() {
         />
       </div>
       <div className="field">
-        <label htmlFor="register-email">Email address</label>
+        <label htmlFor="register-email">Gmail address *</label>
         <input
           id="register-email"
           type="email"
           autoComplete="email"
           inputMode="email"
+          placeholder="yourname@gmail.com"
           value={email}
           onChange={(event) => setEmail(event.target.value)}
           required
         />
+        <span style={{ color: "var(--muted)", fontSize: "0.72rem" }}>
+          Only official @gmail.com accounts are accepted.
+        </span>
+      </div>
+      <div className="field">
+        <label htmlFor="register-phone">Mobile Number (Indian +91) *</label>
+        <input
+          id="register-phone"
+          type="tel"
+          autoComplete="tel"
+          inputMode="tel"
+          placeholder="+91 98765 43210 or 9876543210"
+          value={phoneNumber}
+          onChange={(event) => setPhoneNumber(event.target.value)}
+          required
+        />
+        <span style={{ color: "var(--muted)", fontSize: "0.72rem" }}>
+          10-digit Indian number starting with 6, 7, 8, or 9.
+        </span>
       </div>
       <div className="field">
         <label htmlFor="register-password">Password</label>
@@ -185,14 +249,21 @@ export function ForgotPasswordForm() {
     event.preventDefault();
     setError("");
     setSuccess("");
+
+    const trimmedEmail = email.trim().toLowerCase();
+    if (!isGmailAddress(trimmedEmail)) {
+      setError("Only Gmail accounts (@gmail.com) are accepted.");
+      return;
+    }
+
     setLoading(true);
     try {
       const supabase = createClient();
-      const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+      const { error } = await supabase.auth.resetPasswordForEmail(trimmedEmail, {
         redirectTo: `${window.location.origin}/auth/callback?next=/auth/reset-password`,
       });
       if (error) setError(friendlyAuthError(error.message));
-      else setSuccess("If the account exists, a password reset link has been sent.");
+      else setSuccess("If your Gmail account exists, a password reset link has been sent.");
     } finally {
       setLoading(false);
     }

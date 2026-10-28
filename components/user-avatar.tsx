@@ -58,7 +58,7 @@ export function UserAvatar({
     }
   }, [userId, initialAvatarUrl]);
 
-  const avatarSrc = localAvatar || (initialAvatarUrl && !initialAvatarUrl.startsWith("data:") ? initialAvatarUrl : null);
+  const avatarSrc = localAvatar || initialAvatarUrl || null;
 
   return (
     <div className={className}>

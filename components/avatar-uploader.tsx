@@ -116,7 +116,7 @@ export function AvatarUploader({ profileId, initialAvatarUrl, displayName }: Ava
       const { dataUrl, originalKb, compressedKb } = await compressImageFile(file, 280, 0.82);
       setCompressStats({ originalKb, compressedKb });
 
-      // Store in localStorage for client display without inflating HTTP Cookie headers
+      // Store in localStorage for instant client rendering
       if (typeof window !== "undefined") {
         try {
           localStorage.setItem(`orbitlms_avatar_${profileId}`, dataUrl);
@@ -126,18 +126,22 @@ export function AvatarUploader({ profileId, initialAvatarUrl, displayName }: Ava
         }
       }
 
-      // Explicitly keep Supabase auth user_metadata lean to prevent JWT cookie overflow (HTTP 431)
+      // Store profile picture directly in Supabase database (profiles.avatar_url)
       const supabase = createClient();
-      const { error: authError } = await supabase.auth.updateUser({
-        data: { avatar_url: null, has_custom_avatar: true, avatar_updated_at: Date.now() },
-      });
+      const { error: dbError } = await supabase
+        .from("profiles")
+        .update({
+          avatar_url: dataUrl,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", profileId);
 
-      if (authError) {
-        console.warn("Could not sync auth metadata:", authError.message);
+      if (dbError) {
+        console.warn("Could not sync avatar to profiles database table:", dbError.message);
       }
 
       setAvatarUrl(dataUrl);
-      setSuccess(`Profile picture updated (${compressedKb} KB optimized)!`);
+      setSuccess(`Profile picture updated (${compressedKb} KB optimized and saved to database)!`);
       router.refresh();
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Failed to process image. Please try again.";

@@ -15,6 +15,8 @@ export async function GET(request: Request) {
         id: data.user.id,
         full_name: (data.user.user_metadata?.full_name as string) || data.user.email?.split("@")[0] || "Student",
         email: data.user.email || "",
+        phone_number: (data.user.user_metadata?.phone_number as string) || null,
+        avatar_url: (data.user.user_metadata?.avatar_url as string) || null,
       });
       return NextResponse.redirect(new URL(next, url.origin));
     }

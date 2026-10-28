@@ -3,6 +3,7 @@
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { validateIndianPhoneNumber } from "@/lib/utils";
 
 const usernamePattern = /^[a-zA-Z0-9_.-]{3,30}$/;
 
@@ -10,16 +11,19 @@ export function ProfileForm({
   profileId,
   initialName,
   initialUsername,
+  initialPhone,
   initialBio,
 }: {
   profileId: string;
   initialName: string;
   initialUsername: string;
+  initialPhone?: string;
   initialBio: string;
 }) {
   const router = useRouter();
   const [fullName, setFullName] = useState(initialName);
   const [username, setUsername] = useState(initialUsername);
+  const [phoneNumber, setPhoneNumber] = useState(initialPhone || "");
   const [bio, setBio] = useState(initialBio);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -35,6 +39,16 @@ export function ProfileForm({
     if (normalizedName.length < 2) return setError("Please enter a valid full name.");
     if (normalizedUsername && !usernamePattern.test(normalizedUsername))
       return setError("Username must be 3 to 30 characters using letters, numbers, dot, dash or underscore.");
+
+    let normalizedPhone: string | null = null;
+    if (phoneNumber && phoneNumber.trim()) {
+      const phoneCheck = validateIndianPhoneNumber(phoneNumber);
+      if (!phoneCheck.isValid) {
+        return setError(phoneCheck.error || "Please enter a valid 10-digit Indian mobile number (+91).");
+      }
+      normalizedPhone = phoneCheck.normalized;
+    }
+
     if (normalizedBio.length > 400) return setError("Bio must be 400 characters or fewer.");
 
     setLoading(true);
@@ -45,7 +59,9 @@ export function ProfileForm({
         .update({
           full_name: normalizedName,
           username: normalizedUsername || null,
+          phone_number: normalizedPhone,
           bio: normalizedBio || null,
+          updated_at: new Date().toISOString(),
         })
         .eq("id", profileId);
       if (error) {
@@ -86,6 +102,21 @@ export function ProfileForm({
             placeholder="e.g. alex.dev"
             autoCapitalize="none"
           />
+        </div>
+        <div className="field">
+          <label htmlFor="profile-phone">Mobile Number (Indian +91)</label>
+          <input
+            id="profile-phone"
+            type="tel"
+            autoComplete="tel"
+            inputMode="tel"
+            value={phoneNumber}
+            onChange={(event) => setPhoneNumber(event.target.value)}
+            placeholder="+91 98765 43210"
+          />
+          <span style={{ color: "var(--muted)", fontSize: "0.72rem" }}>
+            Accepts 10-digit Indian mobile number (+91).
+          </span>
         </div>
         <div className="field full">
           <label htmlFor="profile-bio">Bio</label>

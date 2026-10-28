@@ -36,6 +36,7 @@ export type Profile = {
   id: string;
   full_name: string | null;
   username: string | null;
+  phone_number?: string | null;
   bio: string | null;
   avatar_url?: string | null;
   role?: "student" | "admin" | "mentor";
@@ -99,6 +100,7 @@ export type StudentProfileAdminView = {
   id: string;
   full_name: string;
   email: string;
+  phone_number?: string | null;
   username: string | null;
   bio: string | null;
   avatar_url: string | null;

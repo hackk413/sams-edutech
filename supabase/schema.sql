@@ -62,13 +62,27 @@ create table if not exists public.profiles (
   id uuid primary key references auth.users(id) on delete cascade,
   full_name text,
   username text unique,
+  phone_number text,
+  avatar_url text,
   bio text,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   constraint profiles_full_name_length check (full_name is null or char_length(full_name) between 2 and 80),
   constraint profiles_username_format check (username is null or username ~ '^[A-Za-z0-9_.-]{3,30}$'),
+  constraint profiles_phone_format check (phone_number is null or phone_number ~ '^(\+91[\s\-]?)?[6-9]\d{9}$'),
   constraint profiles_bio_length check (bio is null or char_length(bio) <= 400)
 );
+
+-- Ensure profile columns exist if table was already created in earlier migrations
+do $$
+begin
+  if not exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'profiles' and column_name = 'phone_number') then
+    alter table public.profiles add column phone_number text;
+  end if;
+  if not exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'profiles' and column_name = 'avatar_url') then
+    alter table public.profiles add column avatar_url text;
+  end if;
+end $$;
 
 -- ── 4. STUDENT ENROLLMENTS TABLE ──
 create table if not exists public.enrollments (
@@ -139,9 +153,18 @@ security definer
 set search_path = public
 as $$
 begin
-  insert into public.profiles (id, full_name)
-  values (new.id, nullif(trim(new.raw_user_meta_data ->> 'full_name'), ''))
-  on conflict (id) do nothing;
+  insert into public.profiles (id, full_name, phone_number, avatar_url)
+  values (
+    new.id,
+    nullif(trim(new.raw_user_meta_data ->> 'full_name'), ''),
+    nullif(trim(new.raw_user_meta_data ->> 'phone_number'), ''),
+    nullif(trim(new.raw_user_meta_data ->> 'avatar_url'), '')
+  )
+  on conflict (id) do update set
+    full_name = coalesce(excluded.full_name, profiles.full_name),
+    phone_number = coalesce(excluded.phone_number, profiles.phone_number),
+    avatar_url = coalesce(excluded.avatar_url, profiles.avatar_url),
+    updated_at = now();
   return new;
 end;
 $$;
@@ -275,10 +298,11 @@ begin
     json_build_object(
       'id', p.id,
       'full_name', coalesce(p.full_name, 'Learner ' || substring(p.id::text, 1, 6)),
-      'email', coalesce(u.email, 'student@orbitlms.internal'),
+      'email', coalesce(u.email, 'student@gmail.com'),
+      'phone_number', p.phone_number,
       'username', p.username,
       'bio', p.bio,
-      'avatar_url', null,
+      'avatar_url', p.avatar_url,
       'role', 'student',
       'created_at', p.created_at,
       'enrollments_count', coalesce(e_stats.enrollments_count, 0),

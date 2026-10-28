@@ -120,3 +120,76 @@ test("AES-256-GCM successfully encrypts and decrypts feedback notes", () => {
   const decrypted = decryptSensitiveText(encrypted);
   assert.equal(decrypted, original);
 });
+
+// ── Gmail & Indian Phone Validation Helpers for Testing ──
+function isGmailAddress(email) {
+  if (!email || typeof email !== "string") return false;
+  const trimmed = email.trim().toLowerCase();
+  return /^[a-z0-9](\.?[a-z0-9_-]){2,}@gmail\.com$/.test(trimmed);
+}
+
+function validateIndianPhoneNumber(phone) {
+  if (!phone || typeof phone !== "string" || !phone.trim()) {
+    return { isValid: false, normalized: "", error: "Please enter your 10-digit Indian mobile number." };
+  }
+  const cleaned = phone.trim().replace(/[\s\-\(\)]/g, "");
+  const match = cleaned.match(/^(?:\+?91|0)?([6-9]\d{9})$/);
+  if (!match) {
+    return { isValid: false, normalized: "", error: "Invalid Indian mobile number." };
+  }
+  const tenDigits = match[1];
+  return { isValid: true, normalized: `+91 ${tenDigits.slice(0, 5)} ${tenDigits.slice(5)}` };
+}
+
+test("isGmailAddress accepts only valid @gmail.com addresses", () => {
+  assert.equal(isGmailAddress("learner@gmail.com"), true);
+  assert.equal(isGmailAddress("john.doe@gmail.com"), true);
+  assert.equal(isGmailAddress("student_42@gmail.com"), true);
+  assert.equal(isGmailAddress("STUDENT@GMAIL.COM"), true);
+
+  // Rejected non-gmail domains
+  assert.equal(isGmailAddress("student@yahoo.com"), false);
+  assert.equal(isGmailAddress("student@outlook.com"), false);
+  assert.equal(isGmailAddress("student@hotmail.com"), false);
+  assert.equal(isGmailAddress("student@protonmail.com"), false);
+  assert.equal(isGmailAddress("student@gmail.co"), false);
+  assert.equal(isGmailAddress("student@notgmail.com"), false);
+  assert.equal(isGmailAddress(""), false);
+  assert.equal(isGmailAddress(null), false);
+});
+
+test("validateIndianPhoneNumber validates and normalizes Indian mobile numbers", () => {
+  // Valid Indian mobile numbers (starting with 6, 7, 8, or 9)
+  const test1 = validateIndianPhoneNumber("9876543210");
+  assert.equal(test1.isValid, true);
+  assert.equal(test1.normalized, "+91 98765 43210");
+
+  const test2 = validateIndianPhoneNumber("+91 98765 43210");
+  assert.equal(test2.isValid, true);
+  assert.equal(test2.normalized, "+91 98765 43210");
+
+  const test3 = validateIndianPhoneNumber("+919876543210");
+  assert.equal(test3.isValid, true);
+  assert.equal(test3.normalized, "+91 98765 43210");
+
+  const test4 = validateIndianPhoneNumber("08765432100");
+  assert.equal(test4.isValid, true);
+  assert.equal(test4.normalized, "+91 87654 32100");
+
+  const test5 = validateIndianPhoneNumber("7123456789");
+  assert.equal(test5.isValid, true);
+  assert.equal(test5.normalized, "+91 71234 56789");
+
+  const test6 = validateIndianPhoneNumber("6987654321");
+  assert.equal(test6.isValid, true);
+  assert.equal(test6.normalized, "+91 69876 54321");
+
+  // Invalid numbers
+  assert.equal(validateIndianPhoneNumber("5123456789").isValid, false); // starts with 5
+  assert.equal(validateIndianPhoneNumber("1234567890").isValid, false); // starts with 1
+  assert.equal(validateIndianPhoneNumber("987654321").isValid, false); // 9 digits
+  assert.equal(validateIndianPhoneNumber("+1 555 123 4567").isValid, false); // US number
+  assert.equal(validateIndianPhoneNumber("+44 7911 123456").isValid, false); // UK number
+  assert.equal(validateIndianPhoneNumber("").isValid, false);
+  assert.equal(validateIndianPhoneNumber(null).isValid, false);
+});

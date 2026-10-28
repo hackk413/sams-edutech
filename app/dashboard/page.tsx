@@ -75,13 +75,14 @@ export default async function DashboardPage({
   const active = inProgressCourses(typedEnrollments);
   const suggested = recommendedCourses(typedCourses, typedEnrollments, 6);
   const displayName = typedProfile?.full_name || (user.user_metadata?.full_name as string | undefined) || user.email || "Student";
-  const avatarUrl = (user.user_metadata?.avatar_url as string | undefined) || typedProfile?.avatar_url || null;
+  const avatarUrl = typedProfile?.avatar_url || (user.user_metadata?.avatar_url as string | undefined) || null;
   const firstName = displayName.split(/\s+/)[0];
 
   recordRealStudent({
     id: user.id,
     full_name: displayName,
     email: user.email || "",
+    phone_number: typedProfile?.phone_number || (user.user_metadata?.phone_number as string | undefined) || null,
     avatar_url: avatarUrl,
   });
 

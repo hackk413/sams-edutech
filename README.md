@@ -36,6 +36,17 @@ Sams Edutech is a production-grade, highly secure Learning Management System (LM
    - **Constant-time comparison** via `crypto.timingSafeEqual` prevents timing side-channel attacks on passkeys and admin tokens.
    - Strict Row Level Security (RLS) enforcing that students only view and modify their own records.
 
+7. **Strict Gmail-Only Authentication**:
+   - Only official `@gmail.com` accounts are accepted for student registration, sign in, and password recovery to eliminate disposable spam addresses.
+
+8. **Indian Mobile Number Verification (+91)**:
+   - Validates Indian 10-digit mobile phone numbers starting with 6, 7, 8, or 9.
+   - Automatically normalizes numbers to standard `+91 XXXXX XXXXX` format in database records.
+
+9. **Database Profile Picture Storage (`profiles.avatar_url`)**:
+   - Profile photos are auto-compressed to lightweight size and stored directly in the `profiles` PostgreSQL table.
+   - Stored pictures display across all devices, the student dashboard, and the admin dossier console.
+
 ---
 
 ## 📂 Project Structure

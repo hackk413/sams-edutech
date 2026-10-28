@@ -22,7 +22,7 @@ export default async function ProfilePage() {
   const typed = profile as Profile | null;
   const typedEnrollments = (enrollments ?? []) as unknown as Enrollment[];
   const name = typed?.full_name || (user.user_metadata?.full_name as string | undefined) || user.email || "Student";
-  const avatarUrl = (user.user_metadata?.avatar_url as string | undefined) || typed?.avatar_url || null;
+  const avatarUrl = typed?.avatar_url || (user.user_metadata?.avatar_url as string | undefined) || null;
   const completion = profileCompletion(typed);
   const completed = typedEnrollments.filter((item) => clampProgress(item.progress_percent) === 100).length;
 
@@ -83,6 +83,7 @@ export default async function ProfilePage() {
               profileId={user.id}
               initialName={typed?.full_name ?? ""}
               initialUsername={typed?.username ?? ""}
+              initialPhone={typed?.phone_number ?? (user.user_metadata?.phone_number as string | undefined) ?? ""}
               initialBio={typed?.bio ?? ""}
             />
           </section>

@@ -1353,12 +1353,22 @@ export function AdminPanel({
                         <tr key={st.id}>
                           <td>
                             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                              <div className="mini-avatar">
-                                {st.full_name ? st.full_name.slice(0, 2).toUpperCase() : "ST"}
+                              <div className="mini-avatar" style={{ overflow: "hidden" }}>
+                                {st.avatar_url ? (
+                                  /* eslint-disable-next-line @next/next/no-img-element */
+                                  <img src={st.avatar_url} alt={st.full_name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                                ) : (
+                                  st.full_name ? st.full_name.slice(0, 2).toUpperCase() : "ST"
+                                )}
                               </div>
                               <div>
                                 <strong>{st.full_name}</strong>
                                 <div className="small-hint">{st.email}</div>
+                                {st.phone_number && (
+                                  <div className="small-hint" style={{ color: "var(--blue)", fontWeight: 600 }}>
+                                    {st.phone_number}
+                                  </div>
+                                )}
                               </div>
                             </div>
                           </td>
@@ -1411,12 +1421,26 @@ export function AdminPanel({
               <div className="modal-backdrop" onClick={() => setSelectedStudent(null)}>
                 <div className="modal-card modal-card-lg" onClick={(e) => e.stopPropagation()}>
                   <div className="modal-header">
-                    <div>
-                      <span className="sec-eyebrow">Student Identity Dossier</span>
-                      <h3 style={{ margin: "2px 0 0", fontSize: "1.3rem", fontWeight: 800 }}>
-                        {selectedStudent.full_name}
-                      </h3>
-                      <div className="small-hint">{selectedStudent.email} &bull; Member since {displayDate(selectedStudent.created_at)}</div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                      <div className="mini-avatar" style={{ width: 44, height: 44, borderRadius: "50%", overflow: "hidden", flexShrink: 0, fontSize: "1rem" }}>
+                        {selectedStudent.avatar_url ? (
+                          /* eslint-disable-next-line @next/next/no-img-element */
+                          <img src={selectedStudent.avatar_url} alt={selectedStudent.full_name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                        ) : (
+                          selectedStudent.full_name ? selectedStudent.full_name.slice(0, 2).toUpperCase() : "ST"
+                        )}
+                      </div>
+                      <div>
+                        <span className="sec-eyebrow">Student Identity Dossier</span>
+                        <h3 style={{ margin: "2px 0 0", fontSize: "1.3rem", fontWeight: 800 }}>
+                          {selectedStudent.full_name}
+                        </h3>
+                        <div className="small-hint">
+                          {selectedStudent.email}
+                          {selectedStudent.phone_number ? ` • Mobile: ${selectedStudent.phone_number}` : ""}
+                          {` • Member since ${displayDate(selectedStudent.created_at)}`}
+                        </div>
+                      </div>
                     </div>
                     <button
                       type="button"
