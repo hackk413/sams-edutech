@@ -32,7 +32,7 @@ function generateVerificationHash(userId: string): string {
   return `0x${part1.slice(0, 4)}·${part1.slice(4)}·${part2.slice(0, 4)}·${part2.slice(4)}·${part3.slice(0, 4)}`;
 }
 
-export const DEMO_CERTIFICATE_RECIPIENT = "Rohith Kumar";
+export const DEMO_CERTIFICATE_RECIPIENT = "NAME";
 
 /**
  * Returns static formal recipient name for demo certificate
