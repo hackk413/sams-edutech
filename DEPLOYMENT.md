@@ -95,7 +95,7 @@ apt-get install -y docker-compose-plugin
 
 ### Step 4.2: Clone Repository & Create `.env.production`
 ```bash
-git clone https://github.com/<your-username>/sams-edutech.git /var/www/sams-edutech
+git clone https://github.com/hackk413/sams-edutech.git /var/www/sams-edutech
 cd /var/www/sams-edutech
 ```
 Create `.env.production`:
@@ -141,7 +141,7 @@ Your application is now running inside a secured non-root container on port `300
            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
            proxy_set_header X-Forwarded-Proto $scheme;
            proxy_cache_bypass $http_upgrade;
-           client_max_body_size 20M;
+           client_max_body_size 50M;
        }
    }
    ```

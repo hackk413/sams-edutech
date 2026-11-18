@@ -1,11 +1,20 @@
 import crypto from "node:crypto";
 
 const DEFAULT_SECRET = "sams_edutech_master_auth_secret_32bytes_2026_prod!";
-const MASTER_KEY = (process.env.ADMIN_SECRET_KEY || process.env.ADMIN_ACCESS_KEY || DEFAULT_SECRET)
+const MASTER_KEY = (
+  process.env.ADMIN_SECRET_KEY ||
+  process.env.ENCRYPTION_SECRET ||
+  process.env.ADMIN_ACCESS_KEY ||
+  process.env.ADMIN_MASTER_KEY ||
+  DEFAULT_SECRET
+)
   .padEnd(32, "0")
   .slice(0, 32);
 
-const ADMIN_PASSKEY = process.env.ADMIN_ACCESS_KEY || "sams-edutech-admin-2026-secure-key";
+const ADMIN_PASSKEY =
+  process.env.ADMIN_ACCESS_KEY ||
+  process.env.ADMIN_MASTER_KEY ||
+  "sams-edutech-admin-2026-secure-key";
 
 /**
  * Timing-safe string comparison to protect against side-channel timing attacks

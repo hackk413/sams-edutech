@@ -18,8 +18,9 @@ Sams Edutech is a production-grade, highly secure Learning Management System (LM
    - Hardcoded demo and dummy users have been completely eliminated.
 
 3. **Dynamic Course Pricing & Percentage Discounts (Admin Controlled)**:
-   - Administrators can update course prices, apply percentage discounts (e.g., 20%, 35%, 50%), and toggle promotional deals directly in the Admin Console.
-   - No website code modification or redeployment required.
+   - Standard courses set at ₹28,000 slashed to ₹23,999 (~14% discount).
+   - Cloud Computing course set at ₹30,000 slashed to ₹26,000 (~13% discount).
+   - Administrators can update course prices, apply percentage discounts, and toggle promotional deals directly in the Admin Console with zero code modifications or redeployments.
 
 4. **Weekly Assignments & Instant Grading Engine**:
    - Weekly hands-on lab assignments mapped to the 3-month and 4-month course timelines.
@@ -55,9 +56,9 @@ Sams Edutech is a production-grade, highly secure Learning Management System (LM
 ├── app/
 │   ├── (auth)/             # Login, signup, password reset & callback flows
 │   ├── admin/              # Secure faculty & mentor command center
-│   ├── api/                # API routes (admin auth, course pricing, weekly assessments, grading)
+│   ├── api/                # API routes (pricing, assessments, real student sync, grading)
 │   ├── courses/            # Course discovery & curriculum timeline breakdown
-│   ├── dashboard/          # Student dashboard, weekly assignments & instant marks
+│   ├── dashboard/          # Student dashboard, weekly assignments & demo certificate
 │   ├── profile/            # Student private dossier & enrolled programs
 │   ├── globals.css         # Responsive theme styling & CSS variables
 │   └── layout.tsx          # Root layout & global viewport metadata
@@ -65,15 +66,21 @@ Sams Edutech is a production-grade, highly secure Learning Management System (LM
 │   ├── admin-panel.tsx     # Admin console: pricing, assessments, real students & audit logs
 │   ├── course-card.tsx     # Responsive cards with dynamic price & discount badges
 │   ├── header.tsx          # Unified public / student navigation
-│   └── footer.tsx          # Footer with mission statement & platform links
+│   ├── footer.tsx          # Footer with mission statement & platform links
+│   └── royal-certificate-card.tsx # Vector SVG completion certificate
 ├── lib/
 │   ├── assessments.ts      # Real student directory, weekly assignments & instant grading
 │   ├── courses.ts          # Course definitions, 3/4-month metadata & dynamic pricing store
+│   ├── courses-server.ts   # Server-side pricing persistence & database overrides
 │   ├── crypto.ts           # AES-256-GCM cipher, timingSafeCompare & session token signers
 │   ├── lms.ts              # 12-week & 16-week comprehensive course syllabi
 │   └── supabase/           # SSR cookie-aware Supabase clients & proxy
-└── supabase/
-    └── schema.sql          # Complete PostgreSQL schema, tables, RLS policies & triggers
+├── supabase/
+│   └── schema.sql          # Complete PostgreSQL schema, tables, RLS policies & triggers
+├── deploy.sh               # Automated 1-command Hostinger production deploy script
+├── ecosystem.config.cjs    # Production PM2 cluster & process manager configuration
+├── server.js               # Standalone production Node.js server for Hostinger hPanel
+└── Dockerfile              # Multi-stage production container build
 ```
 
 ---
@@ -83,73 +90,82 @@ Sams Edutech is a production-grade, highly secure Learning Management System (LM
 Follow these steps to initialize your database:
 
 1. Sign up for a free account at [supabase.com](https://supabase.com) and create a new project.
-2. In your Supabase Project Dashboard, go to **SQL Editor** -> **New Query**.
-3. Copy the entire contents of [`supabase/schema.sql`](file:///home/rob0t/scratch/orbitlms/supabase/schema.sql) and paste them into the editor.
+2. In your Supabase Project Dashboard, navigate to **SQL Editor** -> **New Query**.
+3. Copy the entire contents of [`supabase/schema.sql`](supabase/schema.sql) and paste them into the editor.
 4. Click **Run**. This will create:
    - Tables: `courses`, `course_pricing`, `profiles`, `enrollments`, `weekly_assessments`, `assessment_submissions`.
    - Complete Row Level Security (RLS) policies protecting student records.
    - Auto-provisioning trigger `on_auth_user_created` for new signups.
-   - Starter industry courses and weekly assignments.
-   - Secure RPC function `get_admin_student_directory()`.
+   - Starter industry courses with ₹28,000 / ₹23,999 pricing (and ₹30,000 / ₹26,000 for Cloud).
+   - Secure RPC functions `get_admin_student_directory()` and `get_admin_submissions_directory()`.
 5. Go to **Authentication** -> **URL Configuration**:
-   - **Site URL**: Set to your domain (e.g., `https://yourdomain.com` or `http://localhost:3000`).
-   - **Redirect URLs**: Add `https://yourdomain.com/auth/callback` and `http://localhost:3000/auth/callback`.
+   - **Site URL**: Set to your domain (e.g., `https://yourdomain.com`).
+   - **Redirect URLs**: Add:
+     - `https://yourdomain.com/auth/callback`
+     - `https://www.yourdomain.com/auth/callback`
+     - `http://localhost:3000/auth/callback`
 6. Go to **Project Settings** -> **API** to copy:
-   - **Project URL**
-   - **anon / public key**
-   - **service_role key** (keep secret; used only on the server)
+   - **Project URL** (`NEXT_PUBLIC_SUPABASE_URL`)
+   - **anon / publishable key** (`NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`)
+   - **service_role key** (Optional; server-side only)
 
 ---
 
-## 🚀 Complete Step-by-Step Hostinger Deployment Guide
+## 🚀 Complete Step-by-Step Hostinger Hosting Guide
 
-Hostinger VPS (Virtual Private Server) running **Ubuntu 22.04 or 24.04 LTS** is the recommended hosting environment for production Next.js 16 SSR applications with PM2 and Nginx.
+Hostinger offers two primary environments for hosting Next.js applications:
+- **Method 1 (Recommended)**: **Hostinger KVM VPS** (Ubuntu 22.04 or 24.04 LTS) using PM2 & Nginx reverse proxy.
+- **Method 2**: **Hostinger Cloud / Web Hosting with Node.js (hPanel)** using the included `server.js`.
+- **Method 3**: **Hostinger VPS with Docker & Docker Compose**.
 
-### Step 1: Connect to your Hostinger VPS via SSH
+---
 
-Open your local terminal and log in using your VPS IP and root credentials:
+### Method 1: Hostinger KVM VPS Deployment (Recommended)
 
+This method provides dedicated CPU/RAM, complete control, automatic restarts, zero downtime, and free SSL via Let's Encrypt.
+
+#### Step 1.1: Connect to your Hostinger VPS via SSH
+Open your terminal and connect with root credentials provided in your Hostinger VPS dashboard:
 ```bash
 ssh root@YOUR_HOSTINGER_VPS_IP
 ```
 
----
-
-### Step 2: System Update & Install Dependencies
-
-Update package lists and install essential build tools, Git, Nginx, and Certbot:
-
+#### Step 1.2: System Update & Install Dependencies
+Update packages and install Git, Nginx, Certbot, and build tools:
 ```bash
 apt update && apt upgrade -y
-apt install -y curl git ufw nginx certbot python3-certbot-nginx
+apt install -y curl git ufw nginx certbot python3-certbot-nginx build-essential
 ```
 
-Install **Node.js 20.x LTS** via NodeSource:
-
+Install **Node.js 20.x or 22.x LTS** via NodeSource:
 ```bash
 curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
 apt install -y nodejs
 ```
 
-Verify Node.js and npm versions:
-
+Verify the installation:
 ```bash
-node -v   # Output should be v20.x.x
-npm -v    # Output should be 10.x.x
+node -v   # Should output v20.x.x
+npm -v    # Should output 10.x.x
 ```
 
 Install **PM2** process manager globally:
-
 ```bash
 npm install -g pm2
 ```
 
----
+#### Step 1.3: Enable Linux Swap Space (Crucial for VPS)
+*Next.js production builds compile TypeScript and bundles which can cause Out-Of-Memory (OOM) errors on 1GB or 2GB RAM VPS servers. Creating a 2GB swap file prevents memory crashes:*
+```bash
+fallocate -l 2G /swapfile
+chmod 600 /swapfile
+mkswap /swapfile
+swapon /swapfile
+echo '/swapfile none swap sw 0 0' | tee -a /etc/fstab
+free -h
+```
 
-### Step 3: Clone the Sams Edutech Repository
-
-Create a directory for web applications and clone the repository:
-
+#### Step 1.4: Clone the Sams Edutech Repository
 ```bash
 mkdir -p /var/www
 cd /var/www
@@ -157,110 +173,95 @@ git clone https://github.com/hackk413/sams-edutech.git
 cd sams-edutech
 ```
 
----
-
-### Step 4: Configure Production Environment Variables
-
-Create the `.env.local` file:
-
+#### Step 1.5: Configure Production Environment Variables
+Create your production `.env.local` configuration file:
 ```bash
 nano .env.local
 ```
 
-Paste your production keys into `.env.local`:
-
+Paste the following variables (replace with your actual Supabase credentials and chosen keys):
 ```env
 # Supabase Configuration
 NEXT_PUBLIC_SUPABASE_URL=https://your-project-id.supabase.co
-NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=your-supabase-anon-key
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=your-supabase-publishable-or-anon-key
 SUPABASE_SERVICE_ROLE_KEY=your-supabase-service-role-key
 
-# Admin Master Passkey (for Admin Console login)
-ADMIN_MASTER_KEY=YourSuperSecureAdminPasskey2026!
+# Admin Console Credentials (for /admin login)
+ADMIN_ACCESS_KEY=sams-edutech-admin-2026-secure-key
 
-# Cryptographic Salt / Secret for AES-256-GCM & Session Tokens (min 32 chars)
-ENCRYPTION_SECRET=e7b48991d087b2f4c9a8e0f11928374650192837465019283746501928374650
+# Cryptographic Secret for AES-256-GCM (minimum 32 characters)
+ADMIN_SECRET_KEY=sams_master_crypto_secret_32bytes_2026_prod!
 
-# Node Environment
+# Node Runtime
 NODE_ENV=production
 PORT=3000
+HOSTNAME=0.0.0.0
 ```
+Save with `Ctrl + O`, `Enter`, and exit with `Ctrl + X`.
 
-Press `Ctrl + O` then `Enter` to save, and `Ctrl + X` to exit.
-
----
-
-### Step 5: Install Dependencies & Build the Application
-
+#### Step 1.6: Install Dependencies & Build Application
 ```bash
 npm install
 npm run build
 ```
+The build will compile optimized production routes into `.next`.
 
-The build will compile optimized production assets into `.next`.
-
----
-
-### Step 6: Start Application with PM2
-
-Start the Next.js production server with PM2:
-
+#### Step 1.7: Start Application with PM2
+Launch the application using the preconfigured `ecosystem.config.cjs`:
 ```bash
-pm2 start npm --name "sams-edutech" -- start
+pm2 start ecosystem.config.cjs
 ```
+*(Alternatively: `pm2 start npm --name "sams-edutech" -- start`)*
 
-Ensure PM2 automatically restarts upon server reboots:
-
+Ensure PM2 automatically restarts the app on server reboots:
 ```bash
 pm2 startup
-# (Run the sudo env PATH=... command printed by PM2)
+# Run the specific command printed in your terminal by PM2, then run:
 pm2 save
 ```
 
-Verify the process is running:
-
+Verify your app is running:
 ```bash
 pm2 status
+curl http://127.0.0.1:3000
 ```
 
----
-
-### Step 7: Configure Nginx as Reverse Proxy
-
-Create an Nginx server block configuration:
-
+#### Step 1.8: Configure Nginx as Reverse Proxy
+Create a new Nginx server configuration:
 ```bash
 nano /etc/nginx/sites-available/sams-edutech
 ```
 
-Paste the following configuration (replace `yourdomain.com` with your actual domain name):
-
+Paste the following configuration (replace `yourdomain.com` with your domain):
 ```nginx
 server {
     listen 80;
     server_name yourdomain.com www.yourdomain.com;
 
+    # Allow avatar and assignment file uploads
+    client_max_body_size 50M;
+
     # Security headers
     add_header X-Frame-Options "DENY" always;
     add_header X-Content-Type-Options "nosniff" always;
-    add_header X-XSS-Protection "1; mode=block" always;
     add_header Referrer-Policy "strict-origin-when-cross-origin" always;
 
-    # Proxy to Next.js node application
+    # Reverse proxy to Next.js
     location / {
         proxy_pass http://127.0.0.1:3000;
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection 'upgrade';
+        proxy_set_header Connection "upgrade";
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
         proxy_cache_bypass $http_upgrade;
-        proxy_read_timeout 60s;
+        proxy_read_timeout 120s;
+        proxy_buffering off;
     }
 
-    # Static file caching
+    # Static assets cache
     location /_next/static {
         proxy_pass http://127.0.0.1:3000;
         proxy_cache_valid 200 365d;
@@ -270,7 +271,6 @@ server {
 ```
 
 Enable the configuration and reload Nginx:
-
 ```bash
 ln -s /etc/nginx/sites-available/sams-edutech /etc/nginx/sites-enabled/
 rm -f /etc/nginx/sites-enabled/default
@@ -278,24 +278,16 @@ nginx -t
 systemctl restart nginx
 ```
 
----
-
-### Step 8: Configure Free SSL Certificate with Let's Encrypt (Certbot)
-
-Make sure your domain's A-record points to your Hostinger VPS IP address, then run:
-
+#### Step 1.9: Point DNS & Obtain Free SSL Certificate
+1. In your domain registrar (Hostinger, Cloudflare, Namecheap), add an **A Record**:
+   - **Host / Name**: `@` &rarr; **Points to**: `YOUR_HOSTINGER_VPS_IP`
+   - **Host / Name**: `www` &rarr; **Points to**: `YOUR_HOSTINGER_VPS_IP`
+2. Obtain a free auto-renewing SSL certificate:
 ```bash
 certbot --nginx -d yourdomain.com -d www.yourdomain.com
 ```
 
-Follow the prompts. Certbot will configure SSL and automatic renewal.
-
----
-
-### Step 9: Configure Firewall (UFW)
-
-Enable firewall rules to secure your VPS:
-
+#### Step 1.10: Configure VPS Firewall (UFW)
 ```bash
 ufw allow OpenSSH
 ufw allow 'Nginx Full'
@@ -303,7 +295,115 @@ ufw --force enable
 ufw status
 ```
 
-Your Sams Edutech application is now live at `https://yourdomain.com`!
+#### Step 1.11: Future Updates (Zero-Downtime)
+Whenever you push updates to GitHub, simply execute the included automated deploy script:
+```bash
+cd /var/www/sams-edutech
+./deploy.sh
+```
+
+---
+
+### Method 2: Hostinger Cloud / Shared Web Hosting (hPanel Node.js)
+
+If you are using Hostinger Cloud Hosting or Business Web Hosting with Node.js support enabled in **hPanel**:
+
+1. **Log in to Hostinger hPanel**: Navigate to **Websites** &rarr; **Manage** &rarr; **Node.js**.
+2. **Configure Node.js Settings**:
+   - **Node.js Version**: Select **20.x** or **22.x**.
+   - **Application Mode**: **Production**.
+   - **Application Root**: `public_html` (or your subdomain folder).
+   - **Application Startup File**: `server.js` *(preconfigured in the root of this repository)*.
+3. **Upload Files or Git Clone**:
+   - Open **Git** in hPanel, connect repository `https://github.com/hackk413/sams-edutech.git` to deploy to `public_html`.
+   - Alternatively, open **SSH / Terminal** in hPanel:
+     ```bash
+     cd ~/public_html
+     git clone https://github.com/hackk413/sams-edutech.git .
+     ```
+4. **Set Environment Variables**:
+   In hPanel under **Node.js &rarr; Environment Variables**, add:
+   - `NEXT_PUBLIC_SUPABASE_URL`
+   - `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
+   - `SUPABASE_SERVICE_ROLE_KEY`
+   - `ADMIN_ACCESS_KEY`
+   - `ADMIN_SECRET_KEY`
+   - `NODE_ENV=production`
+   - `PORT=3000`
+5. **Install Dependencies & Build**:
+   In the hPanel Terminal:
+   ```bash
+   npm install
+   npm run build
+   ```
+6. **Start Application**:
+   Click **Start Application** or **Restart** in hPanel.
+7. **Enable Free SSL**:
+   In hPanel, navigate to **Security** &rarr; **SSL** &rarr; **Install SSL** (1-click active).
+
+---
+
+### Method 3: Hostinger VPS with Docker & Docker Compose
+
+If you prefer containerized deployment:
+
+1. Connect via SSH and install Docker:
+```bash
+curl -fsSL https://get.docker.com -o get-docker.sh && sh get-docker.sh
+apt-get install -y docker-compose-plugin
+```
+2. Clone repository & prepare `.env.production`:
+```bash
+git clone https://github.com/hackk413/sams-edutech.git /var/www/sams-edutech
+cd /var/www/sams-edutech
+cp .env.example .env.production
+nano .env.production
+```
+3. Build and launch:
+```bash
+docker compose up -d --build
+```
+Your application runs in an isolated, secure, auto-restarting container on port `3000`.
+
+---
+
+## 🛠️ Hostinger Troubleshooting & FAQs
+
+### Q1: `npm run build` fails with "JavaScript heap out of memory" or "Killed"
+- **Cause**: The VPS ran out of physical RAM during TypeScript bundling.
+- **Solution**: Enable Linux swap space as described in **Step 1.3** above:
+  ```bash
+  fallocate -l 2G /swapfile && chmod 600 /swapfile && mkswap /swapfile && swapon /swapfile
+  ```
+  You can also pass more memory directly:
+  ```bash
+  NODE_OPTIONS="--max-old-space-size=4096" npm run build
+  ```
+
+### Q2: Nginx displays `502 Bad Gateway`
+- **Cause**: Next.js is not running or crashed on port 3000.
+- **Solution**: Check PM2 logs:
+  ```bash
+  pm2 status
+  pm2 logs sams-edutech --lines 50
+  ```
+  Ensure `.env.local` contains valid Supabase keys and restart:
+  ```bash
+  pm2 restart sams-edutech
+  ```
+
+### Q3: Uploading profile avatars gives `413 Request Entity Too Large`
+- **Cause**: Nginx default client upload limit is 1MB.
+- **Solution**: Ensure your `/etc/nginx/sites-available/sams-edutech` includes:
+  ```nginx
+  client_max_body_size 50M;
+  ```
+  Then run `nginx -t && systemctl reload nginx`.
+
+### Q4: Student stays on login page or redirects back to `/auth/login`
+- **Cause**: Supabase Authentication **Redirect URLs** not configured for your live domain.
+- **Solution**: Open your Supabase Dashboard &rarr; **Authentication** &rarr; **URL Configuration**:
+  - Add `https://yourdomain.com/auth/callback` to the redirect whitelist.
 
 ---
 
@@ -330,11 +430,14 @@ npm install
 # Run local development server
 npm run dev
 
-# Run unit tests
+# Run unit test suite
 npm test
 
 # Run TypeScript typecheck
 npm run typecheck
+
+# Run ESLint validation
+npm run lint
 
 # Run Next.js production build
 npm run build
