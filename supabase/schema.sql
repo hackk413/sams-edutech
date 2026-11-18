@@ -18,9 +18,9 @@ create table if not exists public.courses (
   lessons_count integer not null default 1 check (lessons_count > 0),
   duration_months integer not null default 3 check (duration_months in (3, 4)),
   training_plan text not null default '3-Month Accelerator Track',
-  price numeric(8,2) not null default 499 check (price >= 0),
-  original_price numeric(8,2) not null default 799 check (original_price >= 0),
-  discount_percent integer not null default 35 check (discount_percent between 0 and 100),
+  price numeric(8,2) not null default 23999 check (price >= 0),
+  original_price numeric(8,2) not null default 28000 check (original_price >= 0),
+  discount_percent integer not null default 14 check (discount_percent between 0 and 100),
   accent text not null default 'blue' check (accent in ('blue', 'orange', 'dark', 'green', 'purple')),
   highlights text[] not null default '{}',
   created_at timestamptz not null default now(),
@@ -37,22 +37,22 @@ begin
     alter table public.courses add column training_plan text not null default '3-Month Accelerator Track';
   end if;
   if not exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'courses' and column_name = 'price') then
-    alter table public.courses add column price numeric(8,2) not null default 499 check (price >= 0);
+    alter table public.courses add column price numeric(8,2) not null default 23999 check (price >= 0);
   end if;
   if not exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'courses' and column_name = 'original_price') then
-    alter table public.courses add column original_price numeric(8,2) not null default 799 check (original_price >= 0);
+    alter table public.courses add column original_price numeric(8,2) not null default 28000 check (original_price >= 0);
   end if;
   if not exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'courses' and column_name = 'discount_percent') then
-    alter table public.courses add column discount_percent integer not null default 35 check (discount_percent between 0 and 100);
+    alter table public.courses add column discount_percent integer not null default 14 check (discount_percent between 0 and 100);
   end if;
 end $$;
 
 -- ── 2. DYNAMIC COURSE PRICING OVERRIDE TABLE ──
 create table if not exists public.course_pricing (
   slug text primary key references public.courses(slug) on delete cascade,
-  price numeric(8,2) not null default 499 check (price >= 0),
-  original_price numeric(8,2) not null default 799 check (original_price >= 0),
-  discount_percent integer not null default 35 check (discount_percent between 0 and 100),
+  price numeric(8,2) not null default 23999 check (price >= 0),
+  original_price numeric(8,2) not null default 28000 check (original_price >= 0),
+  discount_percent integer not null default 14 check (discount_percent between 0 and 100),
   active boolean not null default true,
   updated_at timestamptz not null default now()
 );
@@ -61,6 +61,7 @@ create table if not exists public.course_pricing (
 create table if not exists public.profiles (
   id uuid primary key references auth.users(id) on delete cascade,
   full_name text,
+  email text,
   username text unique,
   phone_number text,
   avatar_url text,
@@ -76,6 +77,9 @@ create table if not exists public.profiles (
 -- Ensure profile columns exist if table was already created in earlier migrations
 do $$
 begin
+  if not exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'profiles' and column_name = 'email') then
+    alter table public.profiles add column email text;
+  end if;
   if not exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'profiles' and column_name = 'phone_number') then
     alter table public.profiles add column phone_number text;
   end if;
@@ -153,15 +157,17 @@ security definer
 set search_path = public
 as $$
 begin
-  insert into public.profiles (id, full_name, phone_number, avatar_url)
+  insert into public.profiles (id, full_name, email, phone_number, avatar_url)
   values (
     new.id,
     nullif(trim(new.raw_user_meta_data ->> 'full_name'), ''),
+    nullif(trim(new.email), ''),
     nullif(trim(new.raw_user_meta_data ->> 'phone_number'), ''),
     nullif(trim(new.raw_user_meta_data ->> 'avatar_url'), '')
   )
   on conflict (id) do update set
     full_name = coalesce(excluded.full_name, profiles.full_name),
+    email = coalesce(excluded.email, profiles.email),
     phone_number = coalesce(excluded.phone_number, profiles.phone_number),
     avatar_url = coalesce(excluded.avatar_url, profiles.avatar_url),
     updated_at = now();
@@ -298,7 +304,7 @@ begin
     json_build_object(
       'id', p.id,
       'full_name', coalesce(p.full_name, 'Learner ' || substring(p.id::text, 1, 6)),
-      'email', coalesce(u.email, 'student@gmail.com'),
+      'email', coalesce(p.email, u.email, 'student@gmail.com'),
       'phone_number', p.phone_number,
       'username', p.username,
       'bio', p.bio,
@@ -339,7 +345,48 @@ begin
 end;
 $$;
 
-revoke all on function public.get_admin_student_directory() from public, anon, authenticated;
+grant execute on function public.get_admin_student_directory() to anon, authenticated;
+
+-- ── 9B. REAL ASSESSMENT SUBMISSIONS RPC FUNCTION (Admin Definer) ──
+create or replace function public.get_admin_submissions_directory()
+returns json
+language plpgsql
+security definer
+set search_path = public, auth
+as $$
+declare
+  result json;
+begin
+  select json_agg(
+    json_build_object(
+      'id', s.id,
+      'assessment_id', s.assessment_id,
+      'user_id', s.user_id,
+      'student_name', s.student_name,
+      'student_email', s.student_email,
+      'github_url', s.github_url,
+      'demo_url', s.demo_url,
+      'notes', s.notes,
+      'submission_content', s.submission_content,
+      'status', s.status,
+      'score', s.score,
+      'grade', s.grade,
+      'feedback', s.feedback,
+      'feedback_encrypted', s.feedback_encrypted,
+      'graded_by', s.graded_by,
+      'graded_at', s.graded_at,
+      'submitted_at', s.submitted_at,
+      'updated_at', s.updated_at
+    )
+  ) into result
+  from public.assessment_submissions s
+  order by s.submitted_at desc;
+
+  return coalesce(result, '[]'::json);
+end;
+$$;
+
+grant execute on function public.get_admin_submissions_directory() to anon, authenticated;
 
 -- ── 10. SEED DATA: 4-MONTH & 3-MONTH INDUSTRY ACCELERATOR PROGRAMS ──
 insert into public.courses (
@@ -356,7 +403,7 @@ values
   'Cybersecurity',
   'Intermediate',
   64.0, 48, 4, '4-Month Comprehensive Track',
-  499.00, 799.00, 38,
+  23999.00, 28000.00, 14,
   'blue',
   array[
     'Enterprise SIEM Architecture (Splunk, Elastic & Microsoft Sentinel)',
@@ -373,7 +420,7 @@ values
   'Data Science',
   'Beginner',
   58.0, 44, 3, '3-Month Accelerator Track',
-  449.00, 699.00, 36,
+  23999.00, 28000.00, 14,
   'green',
   array[
     'Vectorized Data Manipulation with Advanced NumPy & Pandas',
@@ -390,7 +437,7 @@ values
   'Artificial Intelligence',
   'Advanced',
   72.0, 52, 4, '4-Month Comprehensive Track',
-  599.00, 899.00, 33,
+  23999.00, 28000.00, 14,
   'purple',
   array[
     'Enterprise Retrieval-Augmented Generation (RAG) with Hybrid Search & Rerankers',
@@ -407,7 +454,7 @@ values
   'Machine Learning',
   'Intermediate',
   68.0, 50, 3, '3-Month Accelerator Track',
-  499.00, 749.00, 33,
+  23999.00, 28000.00, 14,
   'orange',
   array[
     'Supervised & Unsupervised Machine Learning with Scikit-Learn & XGBoost',
@@ -424,7 +471,7 @@ values
   'Full Stack Development',
   'All levels',
   80.0, 64, 4, '4-Month Comprehensive Track',
-  549.00, 849.00, 35,
+  26000.00, 30000.00, 13,
   'dark',
   array[
     'Modern React 19, Next.js App Router & Server Components Architecture',
@@ -451,11 +498,11 @@ on conflict (slug) do update set
 -- ── 11. SEED DATA: DYNAMIC PRICING OVERRIDES ──
 insert into public.course_pricing (slug, price, original_price, discount_percent, active)
 values
-('cybersecurity-soc-operations', 499.00, 799.00, 38, true),
-('applied-data-science', 449.00, 699.00, 36, true),
-('generative-ai-and-agents', 599.00, 899.00, 33, true),
-('machine-learning-engineering', 499.00, 749.00, 33, true),
-('fullstack-web-cloud-development', 549.00, 849.00, 35, true)
+('cybersecurity-soc-operations', 23999.00, 28000.00, 14, true),
+('applied-data-science', 23999.00, 28000.00, 14, true),
+('generative-ai-and-agents', 23999.00, 28000.00, 14, true),
+('machine-learning-engineering', 23999.00, 28000.00, 14, true),
+('fullstack-web-cloud-development', 26000.00, 30000.00, 13, true)
 on conflict (slug) do update set
   price = excluded.price,
   original_price = excluded.original_price,

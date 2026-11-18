@@ -32,23 +32,13 @@ function generateVerificationHash(userId: string): string {
   return `0x${part1.slice(0, 4)}·${part1.slice(4)}·${part2.slice(0, 4)}·${part2.slice(4)}·${part3.slice(0, 4)}`;
 }
 
-/**
- * Cleanly formats email addresses or raw usernames to proper formal certificate names
- */
-function formatRecipientName(nameOrEmail: string): string {
-  if (!nameOrEmail) return "Student";
-  if (!nameOrEmail.includes("@")) return nameOrEmail;
+export const DEMO_CERTIFICATE_RECIPIENT = "Rohith Kumar";
 
-  const prefix = nameOrEmail.split("@")[0];
-  const cleaned = prefix.replace(/[0-9]+/g, " ").trim();
-  if (cleaned.length >= 2) {
-    return cleaned
-      .split(/[\s._-]+/)
-      .filter(Boolean)
-      .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
-      .join(" ");
-  }
-  return prefix.charAt(0).toUpperCase() + prefix.slice(1);
+/**
+ * Returns static formal recipient name for demo certificate
+ */
+function formatRecipientName(): string {
+  return DEMO_CERTIFICATE_RECIPIENT;
 }
 
 /**
@@ -116,19 +106,17 @@ function VictorianCornerSvg({ position }: { position: "tl" | "tr" | "bl" | "br" 
  * - Gold embossed seal medallion
  */
 function CertificateSvgDocument({
-  displayName,
   courseTitle,
   certId,
   verificationHash,
   issueDate,
 }: {
-  displayName: string;
   courseTitle: string;
   certId: string;
   verificationHash: string;
   issueDate: string;
 }) {
-  const formalName = formatRecipientName(displayName);
+  const formalName = formatRecipientName();
 
   return (
     <svg
@@ -451,17 +439,18 @@ function CertificateSvgDocument({
 }
 
 export function RoyalCertificateCard({
-  displayName,
+  displayName: _displayName,
   courseTitle = "Full-Stack Software Architecture & Systems",
   userId,
 }: RoyalCertificateCardProps) {
+  void _displayName;
   const [modalOpen, setModalOpen] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
 
   const verificationHash = generateVerificationHash(userId);
   const certId = `SAMS-2026-${userId.slice(0, 6).toUpperCase()}`;
   const issueDate = "October 8, 2026";
-  const formalName = formatRecipientName(displayName);
+  const formalName = formatRecipientName();
 
   function copyShareLink() {
     if (typeof window === "undefined") return;
@@ -518,7 +507,6 @@ export function RoyalCertificateCard({
         >
           <div className="royal-demo-cert-inner">
             <CertificateSvgDocument
-              displayName={displayName}
               courseTitle={courseTitle}
               certId={certId}
               verificationHash={verificationHash}
@@ -608,7 +596,6 @@ export function RoyalCertificateCard({
             <div className="royal-modal-cert-scroll">
               <div className="royal-modal-cert-wrap">
                 <CertificateSvgDocument
-                  displayName={displayName}
                   courseTitle={courseTitle}
                   certId={certId}
                   verificationHash={verificationHash}

@@ -38,8 +38,22 @@ export function LoginForm({ next, initialError }: { next?: string; initialError?
     setLoading(true);
     try {
       const supabase = createClient();
-      const { error } = await supabase.auth.signInWithPassword({ email: trimmedEmail, password });
+      const { data: signInData, error } = await supabase.auth.signInWithPassword({ email: trimmedEmail, password });
       if (error) { setError(friendlyAuthError(error.message)); return; }
+
+      if (signInData?.user) {
+        fetch("/api/students/record", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            id: signInData.user.id,
+            full_name: signInData.user.user_metadata?.full_name || trimmedEmail.split("@")[0],
+            email: trimmedEmail,
+            phone_number: signInData.user.user_metadata?.phone_number || null,
+          }),
+        }).catch(() => {});
+      }
+
       router.push(safeNextPath(next));
       router.refresh();
     } finally {
@@ -137,12 +151,24 @@ export function RegisterForm() {
       });
       if (error) { setError(friendlyAuthError(error.message)); return; }
 
-      // Also upsert profile directly if session is active
+      // Also record student via server endpoint & upsert profile directly
       if (data.user?.id) {
+        fetch("/api/students/record", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            id: data.user.id,
+            full_name: fullName.trim(),
+            email: trimmedEmail,
+            phone_number: phoneCheck.normalized,
+          }),
+        }).catch(() => {});
+
         try {
           await supabase.from("profiles").upsert({
             id: data.user.id,
             full_name: fullName.trim(),
+            email: trimmedEmail,
             phone_number: phoneCheck.normalized,
           });
         } catch {

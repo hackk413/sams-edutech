@@ -97,11 +97,12 @@ export function AdminPanel({
     const map: Record<string, CoursePricingConfig> = { ...initialPricing };
     COURSES.forEach((c) => {
       if (!map[c.slug]) {
+        const isCloud = c.slug === "fullstack-web-cloud-development";
         map[c.slug] = {
           slug: c.slug,
-          price: c.price ?? 499,
-          original_price: c.original_price ?? 799,
-          discount_percent: c.discount_percent ?? 35,
+          price: c.price ?? (isCloud ? 26000 : 23999),
+          original_price: c.original_price ?? (isCloud ? 30000 : 28000),
+          discount_percent: c.discount_percent ?? (isCloud ? 13 : 14),
           active: true,
         };
       }
@@ -1537,11 +1538,11 @@ export function AdminPanel({
                       <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 16 }}>
                         <span style={{ fontSize: "0.82rem", fontWeight: 700, color: "var(--muted)" }}>Student Live Price:</span>
                         <span style={{ fontSize: "1.45rem", fontWeight: 900, color: "var(--blue)" }}>
-                          ${conf.price}
+                          ₹{conf.price.toLocaleString("en-IN")}
                         </span>
                         {conf.original_price > conf.price && (
                           <span style={{ fontSize: "1rem", color: "var(--muted)", textDecoration: "line-through", fontWeight: 600 }}>
-                            ${conf.original_price}
+                            ₹{conf.original_price.toLocaleString("en-IN")}
                           </span>
                         )}
                         {conf.discount_percent > 0 && (
@@ -1557,7 +1558,7 @@ export function AdminPanel({
                       <div style={{ display: "grid", gap: 12 }}>
                         <div>
                           <label style={{ display: "block", fontSize: "0.76rem", fontWeight: 800, textTransform: "uppercase", color: "var(--muted)", marginBottom: 4 }}>
-                            Original Price ($ USD)
+                            Original Price (₹ INR)
                           </label>
                           <input
                             type="number"
@@ -1589,7 +1590,7 @@ export function AdminPanel({
 
                         <div>
                           <label style={{ display: "block", fontSize: "0.76rem", fontWeight: 800, textTransform: "uppercase", color: "var(--muted)", marginBottom: 4 }}>
-                            Calculated Final Price ($ USD)
+                            Calculated Final Price (₹ INR)
                           </label>
                           <input
                             type="number"

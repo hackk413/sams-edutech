@@ -3,8 +3,9 @@ import { Icon } from "@/components/icon";
 import type { Course } from "@/lib/types";
 
 export function CourseCard({ course, enrolled = false, featured = false }: { course: Course; enrolled?: boolean; featured?: boolean }) {
-  const finalPrice = course.price ?? 3499;
-  const originalPrice = course.original_price ?? 10999;
+  const isCloud = course.slug === "fullstack-web-cloud-development";
+  const finalPrice = course.price ?? (isCloud ? 26000 : 23999);
+  const originalPrice = course.original_price ?? (isCloud ? 30000 : 28000);
   const discount = course.discount_percent ?? Math.round(((originalPrice - finalPrice) / originalPrice) * 100);
 
   return (

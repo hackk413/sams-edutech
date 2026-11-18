@@ -29,8 +29,9 @@ export function getDynamicCoursePricing(): Record<string, CoursePricingConfig> {
   // Generate initial pricing defaults from COURSES
   const defaults: Record<string, CoursePricingConfig> = {};
   for (const c of COURSES) {
-    const orig = c.original_price ?? 799;
-    const finalPrice = c.price ?? 499;
+    const isCloud = c.slug === "fullstack-web-cloud-development";
+    const orig = c.original_price ?? (isCloud ? 30000 : 28000);
+    const finalPrice = c.price ?? (isCloud ? 26000 : 23999);
     const discount = c.discount_percent ?? Math.round(((orig - finalPrice) / orig) * 100);
     defaults[c.slug] = {
       slug: c.slug,
@@ -60,8 +61,9 @@ export function getCoursePriceConfig(slug: string): CoursePricingConfig {
   if (all[slug]) return all[slug];
 
   const course = COURSES.find((c) => c.slug === slug);
-  const orig = course?.original_price ?? 799;
-  const price = course?.price ?? 499;
+  const isCloud = slug === "fullstack-web-cloud-development";
+  const orig = course?.original_price ?? (isCloud ? 30000 : 28000);
+  const price = course?.price ?? (isCloud ? 26000 : 23999);
   const discount = course?.discount_percent ?? Math.round(((orig - price) / orig) * 100);
 
   return {

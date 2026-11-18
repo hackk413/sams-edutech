@@ -746,13 +746,27 @@ export async function getSubmissions(userId?: string, assessmentId?: string): Pr
   let list = localList;
 
   try {
-    const supabase = await createClient();
-    let query = supabase.from("assessment_submissions").select("*").order("submitted_at", { ascending: false });
-    if (userId) query = query.eq("user_id", userId);
-    if (assessmentId) query = query.eq("assessment_id", assessmentId);
-    const { data, error } = await query;
-    if (!error && data && data.length > 0) {
-      list = data as AssessmentSubmission[];
+    const adminSupabase = await createAdminClient();
+
+    // 1. Try secure definer RPC if available
+    try {
+      const { data: rpcData, error: rpcError } = await adminSupabase.rpc("get_admin_submissions_directory");
+      if (!rpcError && Array.isArray(rpcData) && rpcData.length > 0) {
+        list = rpcData as AssessmentSubmission[];
+      }
+    } catch {
+      // Continue to direct query
+    }
+
+    // 2. Direct query from Supabase
+    if (list === localList || list.length === 0) {
+      let query = adminSupabase.from("assessment_submissions").select("*").order("submitted_at", { ascending: false });
+      if (userId) query = query.eq("user_id", userId);
+      if (assessmentId) query = query.eq("assessment_id", assessmentId);
+      const { data, error } = await query;
+      if (!error && data && data.length > 0) {
+        list = data as AssessmentSubmission[];
+      }
     }
   } catch {
     // Fall back to local list
@@ -951,6 +965,32 @@ export async function getStudentProfilesAdmin(): Promise<StudentProfileAdminView
 
   try {
     const adminSupabase = await createAdminClient();
+
+    // 1. Attempt calling get_admin_student_directory RPC (Security Definer)
+    let rpcStudents: StudentProfileAdminView[] = [];
+    try {
+      const { data: rpcData, error: rpcError } = await adminSupabase.rpc("get_admin_student_directory");
+      if (!rpcError && Array.isArray(rpcData) && rpcData.length > 0) {
+        rpcStudents = rpcData as StudentProfileAdminView[];
+      }
+    } catch {
+      // Continue
+    }
+
+    // 2. Attempt fetching Supabase Auth users if service role is active
+    let authUsers: Array<{ id: string; email?: string; user_metadata?: Record<string, unknown>; created_at?: string }> = [];
+    if (adminSupabase.auth?.admin?.listUsers) {
+      try {
+        const { data: usersData } = await adminSupabase.auth.admin.listUsers({ perPage: 1000 });
+        if (usersData?.users && usersData.users.length > 0) {
+          authUsers = usersData.users;
+        }
+      } catch {
+        // Expected when service role key is not configured
+      }
+    }
+
+    // 3. Query profiles, enrollments, courses
     const [{ data: profiles }, { data: enrollments }, { data: courses }] = await Promise.all([
       adminSupabase.from("profiles").select("*"),
       adminSupabase.from("enrollments").select("*, course:courses(*)"),
@@ -962,33 +1002,19 @@ export async function getStudentProfilesAdmin(): Promise<StudentProfileAdminView
       coursesMap.set(c.id, c.title);
     }
 
-    const studentProfiles: StudentProfileAdminView[] = [];
-    const seenIds = new Set<string>();
+    const studentMap = new Map<string, StudentProfileAdminView>();
 
-    // 1. Process Supabase Database Profiles
-    const rawProfiles = profiles || [];
-    for (const p of rawProfiles) {
-      if (!p.id) continue;
-      seenIds.add(p.id);
-
-      const userEnrollments = (enrollments || []).filter((e: { user_id: string }) => e.user_id === p.id);
-      const userSubmissions = submissions.filter((s) => s.user_id === p.id);
+    // Helper to calculate student statistics
+    function calcStats(uid: string) {
+      const userEnrollments = (enrollments || []).filter((e: { user_id: string }) => e.user_id === uid);
+      const userSubmissions = submissions.filter((s) => s.user_id === uid);
       const graded = userSubmissions.filter((s) => typeof s.score === "number");
       const avgScore =
         graded.length > 0
           ? Math.round(graded.reduce((sum, s) => sum + (s.score || 0), 0) / graded.length)
           : null;
 
-      studentProfiles.push({
-        id: p.id,
-        full_name: p.full_name || p.username || "Registered Student",
-        email: p.email || (p.username ? `${p.username}@gmail.com` : "student@gmail.com"),
-        phone_number: p.phone_number || null,
-        username: p.username,
-        bio: p.bio,
-        avatar_url: p.avatar_url || null,
-        role: p.role || "student",
-        created_at: p.created_at || new Date().toISOString(),
+      return {
         enrollments_count: userEnrollments.length,
         enrolled_courses: userEnrollments.map((e: { course_id: string; progress_percent: number }) => ({
           id: e.course_id,
@@ -998,32 +1024,88 @@ export async function getStudentProfilesAdmin(): Promise<StudentProfileAdminView
         submissions_count: userSubmissions.length,
         graded_count: graded.length,
         average_score: avgScore,
+      };
+    }
+
+    // Add RPC students first if available
+    for (const rs of rpcStudents) {
+      if (rs.id) {
+        studentMap.set(rs.id, rs);
+      }
+    }
+
+    // Merge Auth users
+    for (const au of authUsers) {
+      if (!au.id) continue;
+      const stats = calcStats(au.id);
+      const existing = studentMap.get(au.id);
+      const fullName = (au.user_metadata?.full_name as string) || existing?.full_name || au.email?.split("@")[0] || "Registered Student";
+      const phone = (au.user_metadata?.phone_number as string) || existing?.phone_number || null;
+      const avatar = (au.user_metadata?.avatar_url as string) || existing?.avatar_url || null;
+
+      studentMap.set(au.id, {
+        id: au.id,
+        full_name: fullName,
+        email: au.email || existing?.email || "student@gmail.com",
+        phone_number: phone,
+        username: au.email?.split("@")[0] || null,
+        bio: existing?.bio || null,
+        avatar_url: avatar,
+        role: "student",
+        created_at: au.created_at || existing?.created_at || new Date().toISOString(),
+        ...stats,
+        mentor_notes: existing?.mentor_notes || null,
       });
     }
 
-    // 2. Include any local real students not yet synced in profiles
-    for (const ls of localStudents) {
-      if (!seenIds.has(ls.id)) {
-        seenIds.add(ls.id);
-        const userSubmissions = submissions.filter((s) => s.user_id === ls.id);
-        const graded = userSubmissions.filter((s) => typeof s.score === "number");
-        const avgScore =
-          graded.length > 0
-            ? Math.round(graded.reduce((sum, s) => sum + (s.score || 0), 0) / graded.length)
-            : ls.average_score;
+    // Merge Database Profiles table
+    const rawProfiles = profiles || [];
+    for (const p of rawProfiles) {
+      if (!p.id) continue;
+      const stats = calcStats(p.id);
+      const existing = studentMap.get(p.id);
 
-        studentProfiles.push({
+      studentMap.set(p.id, {
+        id: p.id,
+        full_name: p.full_name || existing?.full_name || p.username || "Registered Student",
+        email: p.email || existing?.email || (p.username ? `${p.username}@gmail.com` : "student@gmail.com"),
+        phone_number: p.phone_number || existing?.phone_number || null,
+        username: p.username || existing?.username || null,
+        bio: p.bio || existing?.bio || null,
+        avatar_url: p.avatar_url || existing?.avatar_url || null,
+        role: p.role || existing?.role || "student",
+        created_at: p.created_at || existing?.created_at || new Date().toISOString(),
+        enrollments_count: stats.enrollments_count || existing?.enrollments_count || 0,
+        enrolled_courses: stats.enrolled_courses.length ? stats.enrolled_courses : (existing?.enrolled_courses || []),
+        submissions_count: stats.submissions_count || existing?.submissions_count || 0,
+        graded_count: stats.graded_count || existing?.graded_count || 0,
+        average_score: stats.average_score ?? existing?.average_score ?? null,
+        mentor_notes: p.mentor_notes || existing?.mentor_notes || null,
+      });
+    }
+
+    // Merge any local registered students
+    for (const ls of localStudents) {
+      if (!studentMap.has(ls.id)) {
+        const stats = calcStats(ls.id);
+        studentMap.set(ls.id, {
           ...ls,
-          submissions_count: userSubmissions.length || ls.submissions_count,
-          graded_count: graded.length || ls.graded_count,
-          average_score: avgScore,
+          submissions_count: stats.submissions_count || ls.submissions_count,
+          graded_count: stats.graded_count || ls.graded_count,
+          average_score: stats.average_score ?? ls.average_score,
+          enrollments_count: stats.enrollments_count || ls.enrollments_count,
+          enrolled_courses: stats.enrolled_courses.length ? stats.enrolled_courses : ls.enrolled_courses,
         });
       }
     }
 
-    if (studentProfiles.length > 0) {
-      saveJsonFile(STUDENTS_FILE, studentProfiles);
-      return studentProfiles;
+    const finalProfiles = Array.from(studentMap.values()).sort(
+      (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    );
+
+    if (finalProfiles.length > 0) {
+      saveJsonFile(STUDENTS_FILE, finalProfiles);
+      return finalProfiles;
     }
   } catch (err) {
     console.error("Error fetching real student profiles:", err);

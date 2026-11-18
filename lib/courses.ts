@@ -20,9 +20,9 @@ export const COURSES: Course[] = [
       "MITRE ATT&CK Mapping & Custom Detection Rule Engineering (Sigma/YARA)",
       "Live Ransomware Containment & Incident Response Protocols (NIST SP 800-61)",
     ],
-    price: 3999,
-    original_price: 12999,
-    discount_percent: 69,
+    price: 23999,
+    original_price: 28000,
+    discount_percent: 14,
   },
   {
     id: "22222222-2222-4222-8222-222222222222",
@@ -43,9 +43,9 @@ export const COURSES: Course[] = [
       "Interactive Analytical Dashboards with Plotly, Streamlit & PowerBI",
       "Automated SQL ETL Data Pipelines & Cloud Data Warehousing",
     ],
-    price: 3499,
-    original_price: 10999,
-    discount_percent: 68,
+    price: 23999,
+    original_price: 28000,
+    discount_percent: 14,
   },
   {
     id: "33333333-3333-4333-8333-333333333333",
@@ -66,9 +66,9 @@ export const COURSES: Course[] = [
       "Parameter-Efficient Fine-Tuning (LoRA & QLoRA) on Open-Weights Models",
       "Production Prompt Engineering, Safety Guardrails & LLM Observability",
     ],
-    price: 4999,
-    original_price: 15999,
-    discount_percent: 68,
+    price: 23999,
+    original_price: 28000,
+    discount_percent: 14,
   },
   {
     id: "44444444-4444-4444-8444-444444444444",
@@ -89,9 +89,9 @@ export const COURSES: Course[] = [
       "End-to-End MLOps: Experiment Tracking with MLflow & Model Versioning",
       "High-Performance Model Serving with FastAPI, Docker & ONNX Runtime",
     ],
-    price: 4299,
-    original_price: 13999,
-    discount_percent: 69,
+    price: 23999,
+    original_price: 28000,
+    discount_percent: 14,
   },
   {
     id: "55555555-5555-4555-8555-555555555555",
@@ -112,19 +112,19 @@ export const COURSES: Course[] = [
       "Stateful Authentication (OAuth, JWT, RBAC), Session Security & Rate Limiting",
       "Cloud Containerization with Docker, Redis Microcaching & Automated CI/CD",
     ],
-    price: 3799,
-    original_price: 11999,
-    discount_percent: 68,
+    price: 26000,
+    original_price: 30000,
+    discount_percent: 13,
   },
 ];
 
 // Fallback pricing map
 export const COURSE_PRICES: Record<string, { price: number; original: number; discount_percent?: number }> = {
-  "cybersecurity-soc-operations": { price: 3999, original: 12999, discount_percent: 69 },
-  "applied-data-science": { price: 3499, original: 10999, discount_percent: 68 },
-  "generative-ai-and-agents": { price: 4999, original: 15999, discount_percent: 68 },
-  "machine-learning-engineering": { price: 4299, original: 13999, discount_percent: 69 },
-  "fullstack-web-cloud-development": { price: 3799, original: 11999, discount_percent: 68 },
+  "cybersecurity-soc-operations": { price: 23999, original: 28000, discount_percent: 14 },
+  "applied-data-science": { price: 23999, original: 28000, discount_percent: 14 },
+  "generative-ai-and-agents": { price: 23999, original: 28000, discount_percent: 14 },
+  "machine-learning-engineering": { price: 23999, original: 28000, discount_percent: 14 },
+  "fullstack-web-cloud-development": { price: 26000, original: 30000, discount_percent: 13 },
 };
 
 export function getCourseBySlug(slug: string): Course | undefined {
