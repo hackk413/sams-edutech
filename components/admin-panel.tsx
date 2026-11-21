@@ -574,8 +574,8 @@ export function AdminPanel({
     : assessments.filter(
         (a) =>
           a.course_id === assessmentCourseFilter ||
-          a.slug.includes(assessmentCourseFilter) ||
-          a.course_title.toLowerCase().includes(assessmentCourseFilter.toLowerCase())
+          (a.slug && a.slug.includes(assessmentCourseFilter)) ||
+          (a.course_title && a.course_title.toLowerCase().includes(assessmentCourseFilter.toLowerCase()))
       );
 
   // Filtered submissions by status and course
@@ -587,21 +587,23 @@ export function AdminPanel({
       if (parent) {
         const matches =
           parent.course_id === submissionCourseFilter ||
-          parent.slug.includes(submissionCourseFilter) ||
-          parent.course_title.toLowerCase().includes(submissionCourseFilter.toLowerCase());
+          (parent.slug && parent.slug.includes(submissionCourseFilter)) ||
+          (parent.course_title && parent.course_title.toLowerCase().includes(submissionCourseFilter.toLowerCase()));
         if (!matches) return false;
       }
     }
     return true;
   });
 
-  // Filtered students
+  // Filtered students (safe against null fields in Supabase profiles)
   const filteredStudents = students.filter((st) => {
+    if (!searchStudent.trim()) return true;
     const q = searchStudent.toLowerCase();
     return (
-      st.full_name.toLowerCase().includes(q) ||
-      st.email.toLowerCase().includes(q) ||
-      (st.username && st.username.toLowerCase().includes(q))
+      (st.full_name && st.full_name.toLowerCase().includes(q)) ||
+      (st.email && st.email.toLowerCase().includes(q)) ||
+      (st.username && st.username.toLowerCase().includes(q)) ||
+      (st.phone_number && st.phone_number.toLowerCase().includes(q))
     );
   });
 
@@ -609,15 +611,16 @@ export function AdminPanel({
   const verifiedPayments = payments.filter((p) => p.status === "verified");
   const totalUpiRevenue = verifiedPayments.reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
 
+  // Filtered payments (safe against null fields)
   const filteredPayments = payments.filter((p) => {
     if (paymentFilter !== "all" && p.status !== paymentFilter) return false;
     if (paymentSearch.trim()) {
       const q = paymentSearch.toLowerCase().trim();
       return (
-        p.utr_number.toLowerCase().includes(q) ||
-        p.student_name.toLowerCase().includes(q) ||
-        p.student_email.toLowerCase().includes(q) ||
-        p.course_title.toLowerCase().includes(q) ||
+        (p.utr_number && p.utr_number.toLowerCase().includes(q)) ||
+        (p.student_name && p.student_name.toLowerCase().includes(q)) ||
+        (p.student_email && p.student_email.toLowerCase().includes(q)) ||
+        (p.course_title && p.course_title.toLowerCase().includes(q)) ||
         (p.sender_upi_id && p.sender_upi_id.toLowerCase().includes(q))
       );
     }
@@ -1724,11 +1727,12 @@ export function AdminPanel({
 
             <div style={{ display: "grid", gap: 20 }}>
               {COURSES.map((course) => {
+                const isCloud = course.slug === "fullstack-web-cloud-development";
                 const conf = pricingMap[course.slug] || {
                   slug: course.slug,
-                  price: course.price ?? 499,
-                  original_price: course.original_price ?? 799,
-                  discount_percent: course.discount_percent ?? 35,
+                  price: course.price ?? (isCloud ? 26000 : 23999),
+                  original_price: course.original_price ?? (isCloud ? 30000 : 28000),
+                  discount_percent: course.discount_percent ?? (isCloud ? 13 : 14),
                   active: true,
                 };
                 const isSaving = savingPricingSlug === course.slug;

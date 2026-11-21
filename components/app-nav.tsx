@@ -37,9 +37,6 @@ export async function AppNav() {
               <Icon name="user" size={16} />Profile
             </Link>
           )}
-          <Link className="nav-link nav-link-admin" href="/admin" title="Admin Command Center">
-            <Icon name="shield" size={15} />Admin
-          </Link>
         </nav>
 
         <div className="nav-actions">
@@ -75,7 +72,6 @@ export async function AppNav() {
               {user && <Link href="/dashboard?tab=assessments"><Icon name="target" size={16} />Weekly Assessments</Link>}
               <Link href="/courses"><Icon name="book" size={16} />Programs</Link>
               {user && <Link href="/profile"><Icon name="user" size={16} />Profile</Link>}
-              <Link href="/admin"><Icon name="shield" size={16} />Admin Command Center</Link>
               {!user ? (
                 <Link href="/auth/login"><Icon name="lock" size={16} />Sign in</Link>
               ) : (

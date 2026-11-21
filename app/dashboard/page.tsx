@@ -25,14 +25,7 @@ export default async function DashboardPage({
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/auth/login?next=/dashboard");
 
-  const [
-    { data: profile },
-    { data: enrollments },
-    { data: courses },
-    weeklyAssessments,
-    studentSubmissions,
-    allPayments,
-  ] = await Promise.all([
+  const results = await Promise.allSettled([
     supabase.from("profiles").select("*").eq("id", user.id).maybeSingle(),
     supabase.from("enrollments").select("*, course:courses(*)").eq("user_id", user.id).order("enrolled_at", { ascending: false }),
     supabase.from("courses").select("*").order("created_at", { ascending: true }),
@@ -40,6 +33,13 @@ export default async function DashboardPage({
     getSubmissions(user.id),
     getUpiPayments(),
   ]);
+
+  const profile = results[0].status === "fulfilled" ? results[0].value.data : null;
+  const enrollments = results[1].status === "fulfilled" ? results[1].value.data : [];
+  const courses = results[2].status === "fulfilled" ? results[2].value.data : [];
+  const weeklyAssessments = results[3].status === "fulfilled" ? results[3].value : [];
+  const studentSubmissions = results[4].status === "fulfilled" ? results[4].value : [];
+  const allPayments = results[5].status === "fulfilled" ? results[5].value : [];
 
   const pendingPayments = allPayments.filter(
     (p) => p.user_id === user.id && p.status === "pending_verification"
