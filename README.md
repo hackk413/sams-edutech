@@ -376,20 +376,65 @@ Your application runs in an isolated, secure, auto-restarting container on port 
 
 ## 💳 Personal UPI QR Payment Gateway & Verification Guide
 
-### 1. How the UPI Payment Gateway Works Without Gateway Fees
-Traditional payment gateways (Razorpay, Cashfree, Stripe) require registered business entities, GST certificates, merchant account approvals, and charge 2%–3% in transaction fees.
+### 1. How One Single Bank QR Code Works for Every Course
+A common question when using direct UPI payments is: **"If I upload one bank account QR code for the entire platform, how does the server know which course the student is paying for?"**
 
-Sams Edutech implements a direct **Peer-to-Peer / Merchant UPI QR Scanner Architecture**:
-1. **Student Scans & Pays**: The checkout modal renders your personalized UPI QR Code and a direct **"Pay via UPI App"** button (which opens Google Pay, PhonePe, or Paytm automatically on mobile).
-2. **Bank Generates a 12-Digit UTR**: Every successful UPI transaction generates an official **12-digit UTR (Unique Transaction Reference) / UPI Ref Number** on the student's payment confirmation screen.
-3. **Student Enters 12-Digit UTR**: The student enters the 12-digit UTR number in the checkout modal.
-4. **Server Validates & Grants Access**:
-   - **Instant Enrollment Mode (Default)**: The server verifies that the UTR is a valid 12-digit number and has never been used before, logs the payment, and **instantly creates the course enrollment**. The student can begin learning immediately without waiting.
-   - **Manual Approval Mode**: The course remains locked until you cross-check the UTR in your bank app and click **"Confirm"** in the Admin Console.
+Here is exactly how Sams Edutech solves this cleanly without needing separate QR codes:
+
+1. **Static Bank UPI QR Codes Accept Any Amount**:
+   - A standard bank or merchant UPI QR code (Google Pay, PhonePe, Paytm, BharatPe, HDFC, SBI, etc.) encodes a universal UPI URI (`upi://pay?pa=yourvpa@bank&pn=YourName`).
+   - It is not locked to a single price — it can accept ₹23,999, ₹26,000, or any tuition amount.
+2. **Context-Aware Checkout Modal**:
+   - When a student browses a course (e.g. *Cybersecurity* at ₹23,999 or *Cloud Engineering* at ₹26,000) and clicks **"Enroll with UPI QR"**, the checkout modal injects the course name, course ID, and exact payable amount right around your bank QR code.
+   - For mobile users, clicking **"Pay with GPay / PhonePe / Paytm"** launches the UPI app with the exact amount and course note pre-filled:
+     `upi://pay?pa=yourvpa@bank&pn=YourName&am=23999&cu=INR&tn=Enrollment-for-Cybersecurity`
+3. **The 12-Digit UTR Binds the Payment to the Course**:
+   - Every completed UPI transfer in India generates a unique **12-digit UTR (Unique Transaction Reference) / UPI Ref No.** on the student's banking receipt.
+   - When the student enters their 12-digit UTR and clicks **"Verify UTR & Unlock Course"**, the payload submitted to `/api/payments/submit` includes:
+     ```json
+     {
+       "course_id": "cybersecurity-soc-operations",
+       "course_title": "Cybersecurity & SOC Operations (Level 1/2 Analyst)",
+       "amount": 23999,
+       "utr_number": "432109876543"
+     }
+     ```
+   - The server associates this unique 12-digit UTR directly to that student's user account and that specific course ID.
+4. **Transparent Admin Command Center**:
+   - In `/admin` under **"UPI Payments & Gateway"**, the admin sees a real-time table displaying:
+     - **Student Name & Email**
+     - **Exact Course Name**
+     - **Exact Expected vs Paid Amount**
+     - **12-Digit UTR** (with 1-click clipboard copy)
+     - **Action**: One-click **"Confirm"** or **"Reject"** (which immediately revokes enrollment if fraudulent).
 
 ---
 
-### 2. How to Upload & Change Your Personal UPI QR Code
+### 2. Traffic Protection: Zero Exhaustion of Supabase Free Tier
+Supabase Free Tier provides **500 MB database storage**, **5 GB monthly bandwidth**, and **connection limits**. If thousands of students browse courses or open the checkout modal, querying Supabase for the QR code and gateway settings on every view would quickly exhaust your free tier.
+
+Sams Edutech implements a **4-tier traffic shield** to ensure near-zero database load:
+
+1. **Static Local Asset Serving (0 KB Supabase Storage / Egress)**:
+   - Your uploaded QR code is saved locally on your Hostinger server in `public/uploads/upi-qr.png`.
+   - It is served directly by Nginx / Next.js static asset pipeline.
+   - **Supabase Storage and Bandwidth used: 0 bytes**.
+2. **In-Memory Read-Through Cache (0 Supabase Queries on Browsing)**:
+   - In `lib/payments.ts`, the active UPI configuration is cached in server memory (`cachedUpiConfig`) with a 10-minute TTL.
+   - When students view courses or open the checkout modal, the server answers directly from memory and local JSON cache (`data/upi_config.json`).
+   - **Supabase queries when students open the enroll modal: 0 queries**.
+3. **HTTP Edge & Browser Caching Headers**:
+   - The gateway configuration endpoint (`/api/upi/config`) sends:
+     `Cache-Control: public, max-age=300, s-maxage=1800, stale-while-revalidate=86400`
+   - Browsers cache the QR config for 5 minutes; Hostinger LiteSpeed/Nginx/Cloudflare reverse proxies cache it for 30 minutes. Students navigating between courses do not make repeat network calls.
+4. **Stateless HTTP PostgREST Protocol**:
+   - Database writes use Supabase's HTTP REST API via `@supabase/ssr`, keeping connection hold time under 10ms with zero lingering TCP socket connections.
+5. **Only Real Payments Write to the Database**:
+   - Database writes only occur when a student actually completes a purchase and submits a valid 12-digit UTR (1 row in `upi_payments` + 1 row in `enrollments`).
+
+---
+
+### 3. How to Upload & Change Your Personal UPI QR Code
 You can update your personal QR code anytime directly from your phone or laptop with **zero code modifications**:
 
 1. Log into the Admin Console at `https://yourdomain.com/admin`.
@@ -401,7 +446,7 @@ You can update your personal QR code anytime directly from your phone or laptop 
 
 ---
 
-### 3. How to Verify Payments & Prevent Fraud
+### 4. How to Verify Payments & Prevent Fraud
 1. When a student submits a payment, you will receive an alert in `/admin` with their Name, Email, Course, Amount, and 12-Digit UTR.
 2. Open your Google Pay / PhonePe / Paytm or Bank Statement and search for the 12-digit UTR.
 3. In `/admin`:

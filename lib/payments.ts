@@ -46,11 +46,32 @@ export const DEFAULT_UPI_CONFIG: UpiGatewayConfig = {
   active: true,
 };
 
+// ── IN-MEMORY CACHE FOR FREE-TIER SUPABASE TRAFFIC PROTECTION ──
+// These caches prevent high-frequency database reads from exhausting Supabase free tier limits.
+let cachedUpiConfig: { data: UpiGatewayConfig; lastFetched: number } | null = null;
+const CONFIG_CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutes in-memory TTL
+
+let cachedPayments: { data: UpiPaymentRecord[]; lastFetched: number } | null = null;
+const PAYMENTS_CACHE_TTL_MS = 15 * 1000; // 15 seconds in-memory TTL
+
 // ── UPI GATEWAY CONFIGURATION ──
 
 export async function getUpiConfig(): Promise<UpiGatewayConfig> {
+  const now = Date.now();
+  // 1. Return in-memory cache if fresh (zero DB queries, zero file I/O)
+  if (cachedUpiConfig && now - cachedUpiConfig.lastFetched < CONFIG_CACHE_TTL_MS) {
+    return cachedUpiConfig.data;
+  }
+
+  // 2. Read from disk cache
   const localConfig = loadJsonFile<UpiGatewayConfig>(UPI_CONFIG_FILE, DEFAULT_UPI_CONFIG);
 
+  // If local config exists and was updated recently, populate memory cache to shield Supabase
+  if (localConfig.updated_at && cachedUpiConfig === null) {
+    cachedUpiConfig = { data: localConfig, lastFetched: now };
+  }
+
+  // 3. Fallback to Supabase sync only on cache miss or TTL expiration
   try {
     const adminSupabase = await createAdminClient();
     const { data, error } = await adminSupabase
@@ -71,12 +92,14 @@ export async function getUpiConfig(): Promise<UpiGatewayConfig> {
         updated_at: data.updated_at,
       };
       saveJsonFile(UPI_CONFIG_FILE, merged);
+      cachedUpiConfig = { data: merged, lastFetched: now };
       return merged;
     }
   } catch {
     // Return local cache on offline or unconfigured database
   }
 
+  cachedUpiConfig = { data: localConfig, lastFetched: now };
   return localConfig;
 }
 
@@ -88,6 +111,8 @@ export async function saveUpiConfig(updates: Partial<UpiGatewayConfig>): Promise
     updated_at: new Date().toISOString(),
   };
 
+  // Immediate synchronous cache update: Zero lag for users
+  cachedUpiConfig = { data: updated, lastFetched: Date.now() };
   saveJsonFile(UPI_CONFIG_FILE, updated);
 
   try {
@@ -118,6 +143,12 @@ export async function saveUpiConfig(updates: Partial<UpiGatewayConfig>): Promise
 // ── UPI PAYMENTS RETRIEVAL ──
 
 export async function getUpiPayments(): Promise<UpiPaymentRecord[]> {
+  const now = Date.now();
+  // Return in-memory payments cache if fresh
+  if (cachedPayments && now - cachedPayments.lastFetched < PAYMENTS_CACHE_TTL_MS) {
+    return cachedPayments.data;
+  }
+
   const localPayments = loadJsonFile<UpiPaymentRecord[]>(PAYMENTS_FILE, []);
 
   try {
@@ -128,6 +159,7 @@ export async function getUpiPayments(): Promise<UpiPaymentRecord[]> {
       const { data: rpcData, error: rpcError } = await adminSupabase.rpc("get_admin_payments_directory");
       if (!rpcError && Array.isArray(rpcData) && rpcData.length > 0) {
         saveJsonFile(PAYMENTS_FILE, rpcData);
+        cachedPayments = { data: rpcData as UpiPaymentRecord[], lastFetched: now };
         return rpcData as UpiPaymentRecord[];
       }
     } catch {
@@ -156,12 +188,14 @@ export async function getUpiPayments(): Promise<UpiPaymentRecord[]> {
         (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
       );
       saveJsonFile(PAYMENTS_FILE, merged);
+      cachedPayments = { data: merged, lastFetched: now };
       return merged;
     }
   } catch {
     // Return local payments cache
   }
 
+  cachedPayments = { data: localPayments, lastFetched: now };
   return localPayments;
 }
 
@@ -229,8 +263,9 @@ export async function submitUpiPayment(input: {
     updated_at: now,
   };
 
-  // 3. Save to local payments file
+  // 3. Save to local payments file and reset in-memory payments cache
   const updatedPayments = [record, ...existing];
+  cachedPayments = { data: updatedPayments, lastFetched: Date.now() };
   saveJsonFile(PAYMENTS_FILE, updatedPayments);
 
   // 4. Save to Supabase `upi_payments` table
@@ -320,6 +355,7 @@ export async function verifyUpiPayment(
   };
 
   payments[index] = updated;
+  cachedPayments = { data: payments, lastFetched: Date.now() };
   saveJsonFile(PAYMENTS_FILE, payments);
 
   try {

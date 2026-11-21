@@ -267,7 +267,7 @@ export function EnrollButton({ courseId, courseTitle, price = 23999, enrolled }:
             <div className="upi-instructions-box">
               <div className="upi-step">
                 <span className="step-num">1</span>
-                <span>Scan QR or tap &apos;Pay with UPI App&apos; and pay <strong>&#8377;{price.toLocaleString("en-IN")}</strong></span>
+                <span>Scan official bank QR or tap &apos;Pay with UPI App&apos; and transfer <strong>&#8377;{price.toLocaleString("en-IN")}</strong></span>
               </div>
               <div className="upi-step">
                 <span className="step-num">2</span>
@@ -275,7 +275,7 @@ export function EnrollButton({ courseId, courseTitle, price = 23999, enrolled }:
               </div>
               <div className="upi-step">
                 <span className="step-num">3</span>
-                <span>Paste the 12-digit UTR below to unlock your course immediately</span>
+                <span>Paste the 12-digit UTR below &mdash; our system matches your transfer to <strong>{courseTitle}</strong></span>
               </div>
             </div>
 
