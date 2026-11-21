@@ -91,7 +91,7 @@ export function getCourseSyllabus(slug: string): SyllabusModule[] {
       ];
 
     case "applied-data-science":
-      // 3-Month Accelerator Track (12 Weeks)
+      // 4-Month Comprehensive Track (16 Weeks)
       return [
         {
           title: "Month 1: High-Performance Python & Vectorized Data Wrangling",
@@ -114,13 +114,23 @@ export function getCourseSyllabus(slug: string): SyllabusModule[] {
           ],
         },
         {
-          title: "Month 3: Interactive Dashboards, Production Analytics & Capstone",
+          title: "Month 3: Interactive Dashboards & Business Intelligence",
           duration: "Weeks 9–12",
           topics: [
             "Week 9: Publication-Grade Visual Analytics with Matplotlib, Seaborn & Plotly",
             "Week 10: Interactive Web Applications & Real-Time Executive Dashboards with Streamlit",
             "Week 11: Business Intelligence Storytelling, KPI Tracking & Executive Reporting",
-            "Week 12: Production Capstone: End-to-End Enterprise E-Commerce Analytics Engine",
+            "Week 12: Production Data Pipeline Architecture & Automated Data Audits",
+          ],
+        },
+        {
+          title: "Month 4: Distributed Big Data, Predictive Analytics & Enterprise Capstone",
+          duration: "Weeks 13–16",
+          topics: [
+            "Week 13: Distributed Data Processing with PySpark, Spark DataFrames & Lakehouses",
+            "Week 14: Predictive Time Series Forecasting (Prophet/ARIMA) & Customer Lifetime Value (CLV)",
+            "Week 15: Workflow Orchestration with Apache Airflow & Automated Cloud ETL Scheduling",
+            "Week 16: Enterprise Capstone: Multi-Channel E-Commerce Predictive Analytics Platform",
           ],
         },
       ];
@@ -171,7 +181,7 @@ export function getCourseSyllabus(slug: string): SyllabusModule[] {
       ];
 
     case "machine-learning-engineering":
-      // 3-Month Accelerator Track (12 Weeks)
+      // 4-Month Comprehensive Track (16 Weeks)
       return [
         {
           title: "Month 1: Classical Machine Learning & Algorithmic Foundations",
@@ -194,13 +204,23 @@ export function getCourseSyllabus(slug: string): SyllabusModule[] {
           ],
         },
         {
-          title: "Month 3: End-to-End MLOps, Model Serving & Cloud Inference",
+          title: "Month 3: Modern NLP, Transformers & High-Efficiency Fine-Tuning",
           duration: "Weeks 9–12",
           topics: [
-            "Week 9: Experiment Tracking, Artifact Storage & Model Registry with MLflow",
-            "Week 10: Feature Store Architecture & Dataset Version Control with DVC",
-            "Week 11: Containerizing ML Models with Docker & High-Throughput FastAPI Async Serving",
-            "Week 12: Production Capstone: Real-Time Fraud Detection Engine with Live Drift Monitoring",
+            "Week 9: Natural Language Processing with HuggingFace, Tokenizers & Modern Transformers",
+            "Week 10: Model Quantization (INT8/FP4), Pruning & ONNX Runtime Acceleration",
+            "Week 11: Distributed Training with PyTorch DDP & Mixed-Precision (FP16/BF16)",
+            "Week 12: Production Model Evaluation, Drift Baseline Setup & Robustness Testing",
+          ],
+        },
+        {
+          title: "Month 4: Production MLOps, Model Serving & Kubernetes Capstone",
+          duration: "Weeks 13–16",
+          topics: [
+            "Week 13: Experiment Tracking, Artifact Storage & Model Registry with MLflow",
+            "Week 14: Feature Store Architecture (Feast) & Dataset Version Control with DVC",
+            "Week 15: Containerizing ML Models with Docker & High-Throughput FastAPI Async Serving",
+            "Week 16: Production Capstone: Kubernetes Real-Time Fraud Detection Engine with Live Drift Monitoring",
           ],
         },
       ];
@@ -246,6 +266,41 @@ export function getCourseSyllabus(slug: string): SyllabusModule[] {
             "Week 14: Automated CI/CD Pipelines with GitHub Actions (Linting, Tests, Image Publishing)",
             "Week 15: Cloud Deployment on AWS ECS, Vercel & Managed PostgreSQL Databases",
             "Week 16: Production Capstone: Building & Launching a Full-Stack Multi-Tenant SaaS Platform",
+          ],
+        },
+      ];
+
+    case "fullstack-web-development-accelerator":
+      // 3-Month Accelerator Track (12 Weeks)
+      return [
+        {
+          title: "Month 1: Modern Frontend Architecture, React 19 & TypeScript",
+          duration: "Weeks 1–4",
+          topics: [
+            "Week 1: Modern HTML5, Responsive Layouts with CSS Flexbox, Grid & Tailwind CSS",
+            "Week 2: Modern JavaScript (ES2024), DOM Architecture & Asynchronous Promises/Fetch",
+            "Week 3: React 19 Core: Component Hierarchy, Props, State, and Custom Hooks",
+            "Week 4: TypeScript for React: Strict Interfaces, Component Props, Event Handling & Zod",
+          ],
+        },
+        {
+          title: "Month 2: Backend REST APIs, Node.js, Express & PostgreSQL",
+          duration: "Weeks 5–8",
+          topics: [
+            "Week 5: Node.js Runtime, Express REST API Architecture & Middleware Chains",
+            "Week 6: Relational Database Design with PostgreSQL: Tables, Schema Relations & CRUD",
+            "Week 7: Type-Safe Database Modeling & Migrations with Prisma ORM",
+            "Week 8: Secure Authentication: Password Hashing (Argon2), JWT Tokens & Route Guards",
+          ],
+        },
+        {
+          title: "Month 3: Full-Stack Integration, State Management & Cloud Deployment",
+          duration: "Weeks 9–12",
+          topics: [
+            "Week 9: Full-Stack Client-Server Integration with TanStack Query & Axios",
+            "Week 10: Client State Management with Zustand, Context API & Optimistic Updates",
+            "Week 11: Unit & Integration Testing with Vitest & Collaborative Git Workflows",
+            "Week 12: Production Capstone: Building & Deploying a Live Full-Stack App on Vercel & Cloud",
           ],
         },
       ];

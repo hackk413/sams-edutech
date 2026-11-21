@@ -32,10 +32,10 @@ export const COURSES: Course[] = [
       "End-to-end data science pipeline from exploratory data analysis (EDA), NumPy/Pandas data wrangling, statistical hypothesis testing, and automated SQL pipelines to interactive data visualization with Plotly, Seaborn, and Streamlit dashboards.",
     category: "Data Science",
     level: "Beginner to Intermediate",
-    duration_hours: 58.0,
-    lessons_count: 44,
-    duration_months: 3,
-    training_plan: "3-Month Accelerator Track",
+    duration_hours: 80.0,
+    lessons_count: 64,
+    duration_months: 4,
+    training_plan: "4-Month Comprehensive Track",
     accent: "green",
     highlights: [
       "Vectorized Data Manipulation with Advanced NumPy & Pandas",
@@ -78,10 +78,10 @@ export const COURSES: Course[] = [
       "Master predictive modeling, deep neural networks with PyTorch, supervised & unsupervised algorithms, feature stores, and end-to-end MLOps deployment with Docker, FastAPI, MLflow, and Kubernetes inference pipelines.",
     category: "Machine Learning",
     level: "Intermediate",
-    duration_hours: 68.0,
-    lessons_count: 50,
-    duration_months: 3,
-    training_plan: "3-Month Accelerator Track",
+    duration_hours: 84.0,
+    lessons_count: 66,
+    duration_months: 4,
+    training_plan: "4-Month Comprehensive Track",
     accent: "orange",
     highlights: [
       "Supervised & Unsupervised Machine Learning with Scikit-Learn & XGBoost",
@@ -116,6 +116,29 @@ export const COURSES: Course[] = [
     original_price: 30000,
     discount_percent: 13,
   },
+  {
+    id: "66666666-6666-4666-8666-666666666666",
+    slug: "fullstack-web-development-accelerator",
+    title: "Full Stack Web Development Accelerator (React, Node & PostgreSQL)",
+    description:
+      "Fast-track your software engineering career with a high-intensity 3-month full-stack immersion. Master modern React 19, TypeScript, Node.js REST APIs, PostgreSQL databases, Tailwind CSS, authentication, and live production deployments.",
+    category: "Full Stack Development",
+    level: "Beginner to Intermediate",
+    duration_hours: 60.0,
+    lessons_count: 48,
+    duration_months: 3,
+    training_plan: "3-Month Accelerator Track",
+    accent: "blue",
+    highlights: [
+      "Modern Frontend Engineering with React 19, TypeScript & Tailwind CSS",
+      "Robust Backend REST API Architecture with Node.js, Express & PostgreSQL",
+      "Type-Safe Database Modeling & Migrations with Prisma ORM",
+      "Production Deployment with Vercel, Supabase & Cloud CI/CD Workflows",
+    ],
+    price: 19999,
+    original_price: 24000,
+    discount_percent: 17,
+  },
 ];
 
 // Fallback pricing map
@@ -125,6 +148,7 @@ export const COURSE_PRICES: Record<string, { price: number; original: number; di
   "generative-ai-and-agents": { price: 23999, original: 28000, discount_percent: 14 },
   "machine-learning-engineering": { price: 23999, original: 28000, discount_percent: 14 },
   "fullstack-web-cloud-development": { price: 26000, original: 30000, discount_percent: 13 },
+  "fullstack-web-development-accelerator": { price: 19999, original: 24000, discount_percent: 17 },
 };
 
 export function getCourseBySlug(slug: string): Course | undefined {

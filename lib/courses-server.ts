@@ -20,7 +20,34 @@ export function getDynamicCoursePricing(): Record<string, CoursePricingConfig> {
     ensureDataDir();
     if (fs.existsSync(PRICING_FILE)) {
       const data = fs.readFileSync(PRICING_FILE, "utf-8");
-      return JSON.parse(data);
+      const parsed = JSON.parse(data) as Record<string, CoursePricingConfig>;
+      let hasMissing = false;
+      for (const c of COURSES) {
+        if (!parsed[c.slug]) {
+          const isCloud = c.slug === "fullstack-web-cloud-development";
+          const is3Month = c.slug === "fullstack-web-development-accelerator";
+          const orig = c.original_price ?? (is3Month ? 24000 : isCloud ? 30000 : 28000);
+          const finalPrice = c.price ?? (is3Month ? 19999 : isCloud ? 26000 : 23999);
+          const discount = c.discount_percent ?? Math.round(((orig - finalPrice) / orig) * 100);
+          parsed[c.slug] = {
+            slug: c.slug,
+            price: finalPrice,
+            original_price: orig,
+            discount_percent: discount,
+            active: true,
+            updated_at: new Date().toISOString(),
+          };
+          hasMissing = true;
+        }
+      }
+      if (hasMissing) {
+        try {
+          fs.writeFileSync(PRICING_FILE, JSON.stringify(parsed, null, 2), "utf-8");
+        } catch {
+          // ignore
+        }
+      }
+      return parsed;
     }
   } catch (err) {
     console.error("Error reading course pricing file:", err);
@@ -30,8 +57,9 @@ export function getDynamicCoursePricing(): Record<string, CoursePricingConfig> {
   const defaults: Record<string, CoursePricingConfig> = {};
   for (const c of COURSES) {
     const isCloud = c.slug === "fullstack-web-cloud-development";
-    const orig = c.original_price ?? (isCloud ? 30000 : 28000);
-    const finalPrice = c.price ?? (isCloud ? 26000 : 23999);
+    const is3Month = c.slug === "fullstack-web-development-accelerator";
+    const orig = c.original_price ?? (is3Month ? 24000 : isCloud ? 30000 : 28000);
+    const finalPrice = c.price ?? (is3Month ? 19999 : isCloud ? 26000 : 23999);
     const discount = c.discount_percent ?? Math.round(((orig - finalPrice) / orig) * 100);
     defaults[c.slug] = {
       slug: c.slug,
@@ -62,8 +90,9 @@ export function getCoursePriceConfig(slug: string): CoursePricingConfig {
 
   const course = COURSES.find((c) => c.slug === slug);
   const isCloud = slug === "fullstack-web-cloud-development";
-  const orig = course?.original_price ?? (isCloud ? 30000 : 28000);
-  const price = course?.price ?? (isCloud ? 26000 : 23999);
+  const is3Month = slug === "fullstack-web-development-accelerator";
+  const orig = course?.original_price ?? (is3Month ? 24000 : isCloud ? 30000 : 28000);
+  const price = course?.price ?? (is3Month ? 19999 : isCloud ? 26000 : 23999);
   const discount = course?.discount_percent ?? Math.round(((orig - price) / orig) * 100);
 
   return {

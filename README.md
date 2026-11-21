@@ -9,8 +9,8 @@ Sams Edutech is a production-grade, highly secure Learning Management System (LM
 ## 🌟 Key Highlights & Architectural Features
 
 1. **4-Month & 3-Month Industry Training Plans**:
-   - **4-Month Comprehensive Tracks** (16 Weeks): *Cybersecurity & SOC Operations*, *Generative AI & Autonomous Agents*, *Full Stack Web & Cloud Engineering*.
-   - **3-Month Accelerator Tracks** (12 Weeks): *Applied Data Science & Advanced Analytics*, *Machine Learning Engineering & MLOps*.
+   - **3-Month Accelerator Track** (12 Weeks): *Full Stack Web Development Accelerator (React, Node, Express & SQL)* — Intensive 12-week fast-track program (₹19,999 slashed from ₹24,000).
+   - **4-Month Comprehensive Tracks** (16 Weeks): *Cybersecurity & SOC Operations*, *Applied Data Science & Advanced Analytics*, *Generative AI & Autonomous Agents*, *Machine Learning Engineering & MLOps*, and *Full Stack Web & Cloud Engineering*.
    - In-depth, month-by-month and week-by-week technical syllabi matching enterprise engineering standards.
 
 2. **Real Student Cohort Directory (Zero Dummy Data)**:
@@ -18,8 +18,9 @@ Sams Edutech is a production-grade, highly secure Learning Management System (LM
    - Hardcoded demo and dummy users have been completely eliminated.
 
 3. **Dynamic Course Pricing & Percentage Discounts (Admin Controlled)**:
-   - Standard courses set at ₹28,000 slashed to ₹23,999 (~14% discount).
-   - Cloud Computing course set at ₹30,000 slashed to ₹26,000 (~13% discount).
+   - **3-Month Full Stack Accelerator**: ₹24,000 slashed to ₹19,999 (17% discount).
+   - **Standard 4-Month Courses**: ₹28,000 slashed to ₹23,999 (~14% discount).
+   - **Full Stack Web & Cloud Engineering**: ₹30,000 slashed to ₹26,000 (~13% discount).
    - Administrators can update course prices, apply percentage discounts, and toggle promotional deals directly in the Admin Console with zero code modifications or redeployments.
 
 4. **Weekly Assignments & Instant Grading Engine**:

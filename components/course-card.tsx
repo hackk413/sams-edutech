@@ -4,8 +4,9 @@ import type { Course } from "@/lib/types";
 
 export function CourseCard({ course, enrolled = false, featured = false }: { course: Course; enrolled?: boolean; featured?: boolean }) {
   const isCloud = course.slug === "fullstack-web-cloud-development";
-  const finalPrice = course.price ?? (isCloud ? 26000 : 23999);
-  const originalPrice = course.original_price ?? (isCloud ? 30000 : 28000);
+  const is3Month = course.slug === "fullstack-web-development-accelerator";
+  const finalPrice = course.price ?? (is3Month ? 19999 : isCloud ? 26000 : 23999);
+  const originalPrice = course.original_price ?? (is3Month ? 24000 : isCloud ? 30000 : 28000);
   const discount = course.discount_percent ?? Math.round(((originalPrice - finalPrice) / originalPrice) * 100);
 
   return (
@@ -16,7 +17,7 @@ export function CourseCard({ course, enrolled = false, featured = false }: { cou
           <strong className="course-cover-title">{course.title}</strong>
         </div>
         <div className="course-cover-pills">
-          <span className="plan-pill">{course.duration_months ?? 3} Months Plan</span>
+          <span className="plan-pill">{course.duration_months ?? (is3Month ? 3 : 4)} Months Plan</span>
           <span className="level-pill">{course.level}</span>
         </div>
       </div>

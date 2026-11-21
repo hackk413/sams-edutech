@@ -527,7 +527,7 @@ values
   'End-to-end data science pipeline from exploratory data analysis (EDA), NumPy/Pandas data wrangling, statistical hypothesis testing, and automated SQL pipelines to interactive data visualization with Plotly, Seaborn, and Streamlit dashboards.',
   'Data Science',
   'Beginner',
-  58.0, 44, 3, '3-Month Accelerator Track',
+  80.0, 64, 4, '4-Month Comprehensive Track',
   23999.00, 28000.00, 14,
   'green',
   array[
@@ -561,7 +561,7 @@ values
   'Master predictive modeling, deep neural networks with PyTorch, supervised & unsupervised algorithms, feature stores, and end-to-end MLOps deployment with Docker, FastAPI, MLflow, and Kubernetes inference pipelines.',
   'Machine Learning',
   'Intermediate',
-  68.0, 50, 3, '3-Month Accelerator Track',
+  84.0, 66, 4, '4-Month Comprehensive Track',
   23999.00, 28000.00, 14,
   'orange',
   array[
@@ -587,6 +587,23 @@ values
     'Stateful Authentication (OAuth, JWT, RBAC), Session Security & Rate Limiting',
     'Cloud Containerization with Docker, Redis Microcaching & Automated CI/CD'
   ]
+),
+(
+  '66666666-6666-4666-8666-666666666666',
+  'Full Stack Web Development Accelerator (React, Node, Express & SQL)',
+  'fullstack-web-development-accelerator',
+  'Fast-track your software engineering career with hands-on modern full stack web development: ES6+, React 19, Tailwind CSS, Node.js, Express, PostgreSQL / MySQL, REST APIs, authentication, and cloud deployment in 12 intensive weeks.',
+  'Full Stack Development',
+  'Beginner',
+  60.0, 48, 3, '3-Month Accelerator Track',
+  19999.00, 24000.00, 17,
+  'blue',
+  array[
+    'Modern Frontend with React 19, Hooks, Vite & Tailwind CSS',
+    'Backend API Development with Node.js, Express & TypeScript',
+    'Relational Databases with PostgreSQL, MySQL & Prisma ORM',
+    'JWT Authentication, Secure Cookies & Production Cloud Hosting'
+  ]
 )
 on conflict (slug) do update set
   title = excluded.title,
@@ -610,7 +627,8 @@ values
 ('applied-data-science', 23999.00, 28000.00, 14, true),
 ('generative-ai-and-agents', 23999.00, 28000.00, 14, true),
 ('machine-learning-engineering', 23999.00, 28000.00, 14, true),
-('fullstack-web-cloud-development', 26000.00, 30000.00, 13, true)
+('fullstack-web-cloud-development', 26000.00, 30000.00, 13, true),
+('fullstack-web-development-accelerator', 19999.00, 24000.00, 17, true)
 on conflict (slug) do update set
   price = excluded.price,
   original_price = excluded.original_price,
@@ -677,6 +695,17 @@ values
   array['Implement strict RBAC with server-side authentication tokens', 'Structure high-performance PostgreSQL tables with foreign key integrity', 'Enforce OWASP security standards: CSP headers, CSRF tokens, input validation'],
   array['GitHub repository link with passing automated test suite', 'Live deployed application URL on VPS or cloud provider', 'Architecture diagram and database schema file'],
   now() + interval '7 days', 100, 60, 'Intermediate', 'published',
+  'https://github.com/hackk413/sams-edutech'
+),
+(
+  'week-1-fsa', 1, 'fullstack-web-development-accelerator',
+  'Full Stack Web Development Accelerator (React, Node, Express & SQL)',
+  'Modern JavaScript (ES6+), Async/Await & Responsive Tailwind UI',
+  'week-1-modern-js-tailwind-ui',
+  'Build a modern responsive web application using semantic HTML5, modern TypeScript/ES6+ features (destructuring, arrow functions, async/await, closures), and responsive layouts with Tailwind CSS.',
+  array['Master modern asynchronous JavaScript patterns and Fetch API error handling', 'Design mobile-first responsive interfaces using Tailwind CSS grid and flexbox', 'Implement client-side DOM validation and local storage state persistence'],
+  array['GitHub repository containing the clean, typed project codebase', 'Live deployment on Vercel or Netlify with 100% responsive design', 'README documenting architecture choices and browser compatibility tests'],
+  now() + interval '7 days', 100, 65, 'Beginner', 'published',
   'https://github.com/hackk413/sams-edutech'
 )
 on conflict (id) do update set

@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import crypto from "node:crypto";
+import fs from "node:fs";
 
 // ── LMS Core Helpers ──
 function clampProgress(value) {
@@ -259,4 +260,29 @@ test("bulk verification helper updates multiple payments correctly", () => {
   assert.equal(updated.filter((p) => p.status === "verified").length, 3);
   assert.equal(updated.filter((p) => p.status === "pending_verification").length, 0);
 });
+
+test("course catalog configuration matches exact duration and pricing requirements", () => {
+  const coursesContent = fs.readFileSync(new URL("./lib/courses.ts", import.meta.url), "utf-8");
+  
+  // Exactly 1 3-Month course priced at 19999 (slashed 24000)
+  assert.ok(coursesContent.includes('slug: "fullstack-web-development-accelerator"'));
+  assert.ok(coursesContent.includes("price: 19999"));
+  assert.ok(coursesContent.includes("original_price: 24000"));
+  
+  const threeMonthMatches = coursesContent.match(/duration_months:\s*3/g) || [];
+  assert.equal(threeMonthMatches.length, 1, "There should be exactly one 3-month course");
+  
+  const fourMonthMatches = coursesContent.match(/duration_months:\s*4/g) || [];
+  assert.equal(fourMonthMatches.length, 5, "There should be exactly 5 remaining 4-month courses");
+
+  // Verify course syllabus coverage in lib/lms.ts
+  const lmsContent = fs.readFileSync(new URL("./lib/lms.ts", import.meta.url), "utf-8");
+  assert.ok(lmsContent.includes('case "fullstack-web-development-accelerator":'));
+  assert.ok(lmsContent.includes('case "applied-data-science":'));
+  assert.ok(lmsContent.includes('case "machine-learning-engineering":'));
+  assert.ok(lmsContent.includes('case "cybersecurity-soc-operations":'));
+  assert.ok(lmsContent.includes('case "generative-ai-and-agents":'));
+  assert.ok(lmsContent.includes('case "fullstack-web-cloud-development":'));
+});
+
 

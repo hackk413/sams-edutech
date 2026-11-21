@@ -134,11 +134,12 @@ export function AdminPanel({
     COURSES.forEach((c) => {
       if (!map[c.slug]) {
         const isCloud = c.slug === "fullstack-web-cloud-development";
+        const is3Month = c.slug === "fullstack-web-development-accelerator";
         map[c.slug] = {
           slug: c.slug,
-          price: c.price ?? (isCloud ? 26000 : 23999),
-          original_price: c.original_price ?? (isCloud ? 30000 : 28000),
-          discount_percent: c.discount_percent ?? (isCloud ? 13 : 14),
+          price: c.price ?? (is3Month ? 19999 : isCloud ? 26000 : 23999),
+          original_price: c.original_price ?? (is3Month ? 24000 : isCloud ? 30000 : 28000),
+          discount_percent: c.discount_percent ?? (is3Month ? 17 : isCloud ? 13 : 14),
           active: true,
         };
       }
@@ -1728,11 +1729,12 @@ export function AdminPanel({
             <div style={{ display: "grid", gap: 20 }}>
               {COURSES.map((course) => {
                 const isCloud = course.slug === "fullstack-web-cloud-development";
+                const is3Month = course.slug === "fullstack-web-development-accelerator";
                 const conf = pricingMap[course.slug] || {
                   slug: course.slug,
-                  price: course.price ?? (isCloud ? 26000 : 23999),
-                  original_price: course.original_price ?? (isCloud ? 30000 : 28000),
-                  discount_percent: course.discount_percent ?? (isCloud ? 13 : 14),
+                  price: course.price ?? (is3Month ? 19999 : isCloud ? 26000 : 23999),
+                  original_price: course.original_price ?? (is3Month ? 24000 : isCloud ? 30000 : 28000),
+                  discount_percent: course.discount_percent ?? (is3Month ? 17 : isCloud ? 13 : 14),
                   active: true,
                 };
                 const isSaving = savingPricingSlug === course.slug;
