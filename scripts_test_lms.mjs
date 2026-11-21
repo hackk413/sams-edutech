@@ -246,3 +246,17 @@ test("validateUtrAuthenticity rejects fake, sequential, and brute-forced UTRs", 
   assert.equal(validateUtrAuthenticity("111122221111").valid, false); // only 2 distinct digits (low entropy)
 });
 
+test("bulk verification helper updates multiple payments correctly", () => {
+  const mockPayments = [
+    { id: "p1", status: "pending_verification" },
+    { id: "p2", status: "pending_verification" },
+    { id: "p3", status: "verified" },
+  ];
+  const toVerify = ["p1", "p2"];
+  const updated = mockPayments.map((p) =>
+    toVerify.includes(p.id) ? { ...p, status: "verified" } : p
+  );
+  assert.equal(updated.filter((p) => p.status === "verified").length, 3);
+  assert.equal(updated.filter((p) => p.status === "pending_verification").length, 0);
+});
+

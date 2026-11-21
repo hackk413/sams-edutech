@@ -1,8 +1,46 @@
+# Dependencies
 node_modules/
+/.pnp
+.pnp.js
+
+# Next.js Build Outputs
 .next/
 out/
-.env*
+build/
+dist/
+
+# Production Environment Variables & Secrets (Keep .env.example tracked)
+.env
+.env*.local
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
 !.env.example
+
+# TypeScript build info & logs
 *.tsbuildinfo
-.DS_Store
+next-env.d.ts
 npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Operating System Files
+.DS_Store
+Thumbs.db
+*.pem
+
+# Local Runtime Data (Keeps directory structure while ignoring runtime database files)
+data/*.json
+!data/.gitkeep
+
+# User Uploaded Static Assets (Keeps directory structure while ignoring runtime user uploads)
+public/uploads/*
+!public/uploads/.gitkeep
+!public/uploads/upi-qr.png
+
+# Turbopack & IDE Configuration
+.turbo
+.idea
+.vscode

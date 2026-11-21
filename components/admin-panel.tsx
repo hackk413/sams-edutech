@@ -79,6 +79,8 @@ export function AdminPanel({
   const [uploadingQr, setUploadingQr] = useState(false);
   const [upiSettingsFeedback, setUpiSettingsFeedback] = useState("");
   const [previewReceipt, setPreviewReceipt] = useState<{ url: string; student: string; utr: string } | null>(null);
+  const [selectedPaymentIds, setSelectedPaymentIds] = useState<string[]>([]);
+  const [bulkActionLoading, setBulkActionLoading] = useState(false);
 
   const [editUpiId, setEditUpiId] = useState(initialUpiConfig?.upi_id || "samsedutech@okaxis");
   const [editPayeeName, setEditPayeeName] = useState(initialUpiConfig?.payee_name || "Sams Edutech");
@@ -215,6 +217,62 @@ export function AdminPanel({
     } finally {
       setPaymentActionLoading(null);
     }
+  }
+
+  // Bulk Verification Handlers
+  async function handleBulkVerify(action: "verify" | "reject") {
+    if (selectedPaymentIds.length === 0) return;
+    const confirmPrompt =
+      action === "verify"
+        ? `Are you sure you want to approve ${selectedPaymentIds.length} payment(s) and unlock courses for all selected students?`
+        : `Are you sure you want to reject ${selectedPaymentIds.length} payment(s)? Access will be revoked.`;
+    if (!window.confirm(confirmPrompt)) return;
+
+    setBulkActionLoading(true);
+    setPaymentFeedback("");
+    try {
+      const res = await fetch("/api/admin/upi/verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ payment_ids: selectedPaymentIds, action }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        setPaymentFeedback(data.error || "Failed to process bulk payments.");
+        return;
+      }
+      if (Array.isArray(data.payments)) {
+        const updatedMap = new Map<string, UpiPaymentRecord>(data.payments.map((p: UpiPaymentRecord) => [p.id, p]));
+        setPayments((prev) => prev.map((p) => (updatedMap.has(p.id) ? updatedMap.get(p.id)! : p)));
+      }
+      setPaymentFeedback(data.message || `Processed ${selectedPaymentIds.length} payment(s).`);
+      setSelectedPaymentIds([]);
+    } catch {
+      setPaymentFeedback("Network error during bulk payment verification.");
+    } finally {
+      setBulkActionLoading(false);
+    }
+  }
+
+  function handleToggleSelect(paymentId: string) {
+    setSelectedPaymentIds((prev) =>
+      prev.includes(paymentId) ? prev.filter((id) => id !== paymentId) : [...prev, paymentId]
+    );
+  }
+
+  function handleSelectAllVisible() {
+    const visibleIds = filteredPayments.map((p) => p.id);
+    const allSelected = visibleIds.length > 0 && visibleIds.every((id) => selectedPaymentIds.includes(id));
+    if (allSelected) {
+      setSelectedPaymentIds((prev) => prev.filter((id) => !visibleIds.includes(id)));
+    } else {
+      setSelectedPaymentIds((prev) => Array.from(new Set([...prev, ...visibleIds])));
+    }
+  }
+
+  function handleSelectAllPending() {
+    const pendingIds = payments.filter((p) => p.status === "pending_verification").map((p) => p.id);
+    setSelectedPaymentIds(pendingIds);
   }
 
   async function handleSaveUpiSettings(e: React.FormEvent) {
@@ -1863,32 +1921,98 @@ export function AdminPanel({
                   />
                 </div>
 
-                {/* Filter Tabs */}
-                <div style={{ display: "flex", gap: 6, marginBottom: 16, overflowX: "auto" }}>
-                  {(["all", "pending_verification", "verified", "rejected"] as const).map((filterKey) => (
+                {/* Filter Tabs & Bulk Actions */}
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 10, marginBottom: 16 }}>
+                  <div style={{ display: "flex", gap: 6, overflowX: "auto" }}>
+                    {(["all", "pending_verification", "verified", "rejected"] as const).map((filterKey) => (
+                      <button
+                        key={filterKey}
+                        type="button"
+                        className={`btn btn-secondary ${paymentFilter === filterKey ? "active" : ""}`}
+                        onClick={() => setPaymentFilter(filterKey)}
+                        style={{
+                          padding: "5px 12px",
+                          fontSize: "0.78rem",
+                          borderColor: paymentFilter === filterKey ? "var(--blue)" : "var(--line)",
+                          background: paymentFilter === filterKey ? "var(--blue-soft)" : "transparent",
+                          color: paymentFilter === filterKey ? "var(--blue)" : "var(--muted)",
+                        }}
+                      >
+                        {filterKey === "all"
+                          ? `All (${payments.length})`
+                          : filterKey === "pending_verification"
+                          ? `Pending (${pendingPaymentsCount})`
+                          : filterKey === "verified"
+                          ? `Verified (${verifiedPayments.length})`
+                          : `Rejected (${payments.filter((p) => p.status === "rejected").length})`}
+                      </button>
+                    ))}
+                  </div>
+
+                  {pendingPaymentsCount > 0 && (
                     <button
-                      key={filterKey}
                       type="button"
-                      className={`btn btn-secondary ${paymentFilter === filterKey ? "active" : ""}`}
-                      onClick={() => setPaymentFilter(filterKey)}
-                      style={{
-                        padding: "5px 12px",
-                        fontSize: "0.78rem",
-                        borderColor: paymentFilter === filterKey ? "var(--blue)" : "var(--line)",
-                        background: paymentFilter === filterKey ? "var(--blue-soft)" : "transparent",
-                        color: paymentFilter === filterKey ? "var(--blue)" : "var(--muted)",
-                      }}
+                      className="btn btn-secondary"
+                      style={{ padding: "5px 12px", fontSize: "0.78rem", color: "var(--orange)", borderColor: "var(--orange)" }}
+                      onClick={handleSelectAllPending}
                     >
-                      {filterKey === "all"
-                        ? `All (${payments.length})`
-                        : filterKey === "pending_verification"
-                        ? `Pending (${pendingPaymentsCount})`
-                        : filterKey === "verified"
-                        ? `Verified (${verifiedPayments.length})`
-                        : `Rejected (${payments.filter((p) => p.status === "rejected").length})`}
+                      ⚡ Select All Pending ({pendingPaymentsCount})
                     </button>
-                  ))}
+                  )}
                 </div>
+
+                {/* Bulk Action Toolbar */}
+                {selectedPaymentIds.length > 0 && (
+                  <div
+                    style={{
+                      padding: "10px 16px",
+                      background: "var(--blue-soft, rgba(0, 102, 204, 0.08))",
+                      border: "1px solid var(--blue)",
+                      borderRadius: 8,
+                      marginBottom: 16,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      flexWrap: "wrap",
+                      gap: 12,
+                    }}
+                  >
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: "0.86rem", fontWeight: 700 }}>
+                      <Icon name="check" size={16} />
+                      <span>{selectedPaymentIds.length} payment(s) selected</span>
+                    </div>
+
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                      <button
+                        type="button"
+                        className="btn btn-primary"
+                        style={{ padding: "6px 14px", fontSize: "0.8rem", background: "var(--green)", borderColor: "var(--green)" }}
+                        disabled={bulkActionLoading}
+                        onClick={() => handleBulkVerify("verify")}
+                      >
+                        {bulkActionLoading ? "Processing..." : `✓ Bulk Confirm & Unlock (${selectedPaymentIds.length})`}
+                      </button>
+                      <button
+                        type="button"
+                        className="btn btn-secondary"
+                        style={{ padding: "6px 12px", fontSize: "0.8rem", color: "var(--red)" }}
+                        disabled={bulkActionLoading}
+                        onClick={() => handleBulkVerify("reject")}
+                      >
+                        ✗ Bulk Reject ({selectedPaymentIds.length})
+                      </button>
+                      <button
+                        type="button"
+                        className="btn btn-secondary"
+                        style={{ padding: "6px 10px", fontSize: "0.76rem" }}
+                        disabled={bulkActionLoading}
+                        onClick={() => setSelectedPaymentIds([])}
+                      >
+                        Deselect
+                      </button>
+                    </div>
+                  </div>
+                )}
 
                 {paymentFeedback && (
                   <div className="form-success" style={{ marginBottom: 14 }}>
@@ -1908,6 +2032,15 @@ export function AdminPanel({
                     <table className="admin-table">
                       <thead>
                         <tr>
+                          <th style={{ width: 36, textAlign: "center" }}>
+                            <input
+                              type="checkbox"
+                              checked={filteredPayments.length > 0 && filteredPayments.every((p) => selectedPaymentIds.includes(p.id))}
+                              onChange={handleSelectAllVisible}
+                              title="Select or deselect all visible payments"
+                              style={{ cursor: "pointer", width: 16, height: 16 }}
+                            />
+                          </th>
                           <th>Student</th>
                           <th>Course</th>
                           <th>Amount</th>
@@ -1920,6 +2053,14 @@ export function AdminPanel({
                       <tbody>
                         {filteredPayments.map((p) => (
                           <tr key={p.id}>
+                            <td style={{ textAlign: "center" }}>
+                              <input
+                                type="checkbox"
+                                checked={selectedPaymentIds.includes(p.id)}
+                                onChange={() => handleToggleSelect(p.id)}
+                                style={{ cursor: "pointer", width: 15, height: 15 }}
+                              />
+                            </td>
                             <td>
                               <strong>{p.student_name}</strong>
                               <div style={{ fontSize: "0.76rem", color: "var(--muted)" }}>{p.student_email}</div>

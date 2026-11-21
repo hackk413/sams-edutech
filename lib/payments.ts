@@ -492,3 +492,42 @@ export async function verifyUpiPayment(
 
   return { success: true, payment: updated };
 }
+
+// ── BULK VERIFY OR REJECT UPI PAYMENTS (Admin Operation) ──
+
+export async function verifyBulkUpiPayments(
+  paymentIds: string[],
+  action: "verify" | "reject",
+  adminNotes?: string,
+  adminId = "admin"
+): Promise<{ success: boolean; processed: number; payments: UpiPaymentRecord[] }> {
+  if (!Array.isArray(paymentIds) || paymentIds.length === 0) {
+    return { success: true, processed: 0, payments: [] };
+  }
+
+  const updatedPayments: UpiPaymentRecord[] = [];
+
+  for (const id of paymentIds) {
+    const result = await verifyUpiPayment(
+      id,
+      action,
+      adminNotes || (action === "verify" ? "Bulk verified by faculty" : "Bulk rejected / invalid UTR"),
+      adminId
+    );
+    if (result.success && result.payment) {
+      updatedPayments.push(result.payment);
+    }
+  }
+
+  await logAdminAction(
+    action === "verify" ? "BULK_VERIFY_UPI_PAYMENTS" : "BULK_REJECT_UPI_PAYMENTS",
+    adminId,
+    `Bulk ${action === "verify" ? "verified" : "rejected"} ${updatedPayments.length} student transaction(s)`
+  );
+
+  return {
+    success: true,
+    processed: updatedPayments.length,
+    payments: updatedPayments,
+  };
+}
