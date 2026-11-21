@@ -40,11 +40,92 @@ export const DEFAULT_UPI_CONFIG: UpiGatewayConfig = {
   upi_id: "samsedutech@okaxis",
   payee_name: "Sams Edutech",
   qr_image_url: "/upi-qr-default.svg",
-  auto_enroll: true,
+  auto_enroll: false, // Security default: Manual or Webhook verification protects against fake UTR brute forcing
   instructions:
-    "Scan the QR code with any UPI app (Google Pay, PhonePe, Paytm, BHIM, CRED). Pay the exact tuition amount, copy the 12-digit UTR/UPI Reference Number from your payment receipt, and paste it below to activate your course enrollment.",
+    "Scan the QR code with any UPI app (Google Pay, PhonePe, Paytm, BHIM, CRED). Pay the exact tuition amount, copy the 12-digit UTR/UPI Reference Number from your payment receipt, and paste it below. Course access unlocks upon bank credit verification.",
   active: true,
 };
+
+// ── ANTI-BRUTE-FORCE & HEURISTIC FRAUD PREVENTION SHIELDS ──
+
+// Rate limiter: Max 3 UTR submissions per user per hour
+const userSubmissionTimestamps = new Map<string, number[]>();
+const MAX_SUBMISSIONS_PER_HOUR = 3;
+const RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000; // 1 hour window
+
+function checkSubmissionRateLimit(userId: string): { allowed: boolean; remaining: number } {
+  const now = Date.now();
+  const timestamps = (userSubmissionTimestamps.get(userId) || []).filter(
+    (t) => now - t < RATE_LIMIT_WINDOW_MS
+  );
+
+  if (timestamps.length >= MAX_SUBMISSIONS_PER_HOUR) {
+    return { allowed: false, remaining: 0 };
+  }
+
+  timestamps.push(now);
+  userSubmissionTimestamps.set(userId, timestamps);
+  return { allowed: true, remaining: MAX_SUBMISSIONS_PER_HOUR - timestamps.length };
+}
+
+/**
+ * Validates UTR format and applies entropy heuristics to reject dummy, sequential, or brute-force patterns
+ */
+export function validateUtrAuthenticity(utr: string): { valid: boolean; reason?: string } {
+  const clean = utr.trim().replace(/\s+/g, "");
+
+  // 1. Must be exactly 12 numeric digits
+  if (!/^\d{12}$/.test(clean)) {
+    return {
+      valid: false,
+      reason: "Invalid UTR format. The UPI Reference Number must be exactly 12 numeric digits (e.g. 432109876543).",
+    };
+  }
+
+  // 2. Reject all identical digits (e.g. 000000000000, 111111111111, 999999999999)
+  if (/^(\d)\1{11}$/.test(clean)) {
+    return {
+      valid: false,
+      reason: "Invalid UTR: Repeated identical digits are detected. Please enter the authentic 12-digit UTR from your bank receipt.",
+    };
+  }
+
+  // 3. Reject obvious ascending or descending sequences
+  const trivialSequences = [
+    "012345678901",
+    "123456789012",
+    "234567890123",
+    "345678901234",
+    "987654321098",
+    "876543210987",
+    "765432109876",
+  ];
+  if (trivialSequences.includes(clean)) {
+    return {
+      valid: false,
+      reason: "Invalid UTR: Sequential sample numbers cannot be verified. Please copy the reference number from your Google Pay/PhonePe/Paytm receipt.",
+    };
+  }
+
+  // 4. Reject repetitive chunk cycles (e.g. 121212121212, 123123123123, 123412341234)
+  if (/^(\d{2})\1{5}$/.test(clean) || /^(\d{3})\1{3}$/.test(clean) || /^(\d{4})\1{2}$/.test(clean)) {
+    return {
+      valid: false,
+      reason: "Invalid UTR: Repetitive number pattern detected. Please enter the exact UTR from your banking receipt.",
+    };
+  }
+
+  // 5. Entropy check: Real NPCI UTRs have at least 4 unique digits
+  const uniqueDigits = new Set(clean.split("")).size;
+  if (uniqueDigits < 4) {
+    return {
+      valid: false,
+      reason: "Invalid UTR: Genuine bank reference numbers contain higher entropy. Please verify your receipt.",
+    };
+  }
+
+  return { valid: true };
+}
 
 // ── IN-MEMORY CACHE FOR FREE-TIER SUPABASE TRAFFIC PROTECTION ──
 // These caches prevent high-frequency database reads from exhausting Supabase free tier limits.
@@ -215,15 +296,25 @@ export async function submitUpiPayment(input: {
 }): Promise<{ success: boolean; error?: string; payment?: UpiPaymentRecord; enrollment_created?: boolean }> {
   const cleanUtr = input.utr_number.trim().replace(/\s+/g, "");
 
-  // 1. Validate UTR (Must be exactly 12 numeric digits)
-  if (!/^\d{12}$/.test(cleanUtr)) {
+  // 1. Anti-Brute-Force Rate Limiting (Max 3 submissions per hour per user)
+  const rateLimit = checkSubmissionRateLimit(input.user_id);
+  if (!rateLimit.allowed) {
     return {
       success: false,
-      error: "Invalid UPI Reference Number (UTR). It must be exactly 12 digits (e.g. 432109876543).",
+      error: "Rate limit exceeded: Maximum 3 payment submission attempts allowed per hour. Please contact faculty support if you need assistance.",
     };
   }
 
-  // 2. Prevent Duplicate UTR submissions
+  // 2. Validate UTR Authenticity & Entropy (Prevents dummy/sequential/synthetic brute-forcing)
+  const authCheck = validateUtrAuthenticity(cleanUtr);
+  if (!authCheck.valid) {
+    return {
+      success: false,
+      error: authCheck.reason || "Invalid UPI Reference Number (UTR).",
+    };
+  }
+
+  // 3. Prevent Duplicate UTR submissions across the platform
   const existing = await getUpiPayments();
   const duplicate = existing.find((p) => p.utr_number === cleanUtr);
   if (duplicate) {
@@ -236,6 +327,17 @@ export async function submitUpiPayment(input: {
     return {
       success: false,
       error: "This 12-digit UTR has already been registered in our system. Please check your banking transaction receipt.",
+    };
+  }
+
+  // 4. Prevent Multiple Concurrent Pending Submissions for the Same Course
+  const pendingSameCourse = existing.find(
+    (p) => p.user_id === input.user_id && p.course_id === input.course_id && p.status === "pending_verification"
+  );
+  if (pendingSameCourse) {
+    return {
+      success: false,
+      error: `You already have a pending verification for this course (UTR: ${pendingSameCourse.utr_number}). Please allow our team to confirm with bank records before submitting another number.`,
     };
   }
 

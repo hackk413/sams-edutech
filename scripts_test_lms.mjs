@@ -201,6 +201,23 @@ function isValidUpiUtr(utr) {
   return /^\d{12}$/.test(clean);
 }
 
+function validateUtrAuthenticity(utr) {
+  if (!isValidUpiUtr(utr)) return { valid: false, reason: "Must be 12 digits" };
+  const clean = utr.trim().replace(/\s+/g, "");
+  if (/^(\d)\1{11}$/.test(clean)) return { valid: false, reason: "Identical digits" };
+  const sequences = [
+    "012345678901", "123456789012", "234567890123", "345678901234",
+    "987654321098", "876543210987", "765432109876",
+  ];
+  if (sequences.includes(clean)) return { valid: false, reason: "Sequential pattern" };
+  if (/^(\d{2})\1{5}$/.test(clean) || /^(\d{3})\1{3}$/.test(clean) || /^(\d{4})\1{2}$/.test(clean)) {
+    return { valid: false, reason: "Repetitive pattern" };
+  }
+  const uniqueDigits = new Set(clean.split("")).size;
+  if (uniqueDigits < 4) return { valid: false, reason: "Low entropy" };
+  return { valid: true };
+}
+
 test("isValidUpiUtr validates 12-digit Indian UPI Reference Numbers", () => {
   assert.equal(isValidUpiUtr("432109876543"), true);
   assert.equal(isValidUpiUtr(" 432109876543 "), true);
@@ -211,5 +228,21 @@ test("isValidUpiUtr validates 12-digit Indian UPI Reference Numbers", () => {
   assert.equal(isValidUpiUtr("43210987ABCD"), false); // alphanumeric
   assert.equal(isValidUpiUtr(""), false);
   assert.equal(isValidUpiUtr(null), false);
+});
+
+test("validateUtrAuthenticity rejects fake, sequential, and brute-forced UTRs", () => {
+  // Real genuine looking UTRs
+  assert.equal(validateUtrAuthenticity("432109876543").valid, true);
+  assert.equal(validateUtrAuthenticity("503412896745").valid, true);
+  assert.equal(validateUtrAuthenticity("612984537120").valid, true);
+
+  // Rejected dummy / brute-force patterns
+  assert.equal(validateUtrAuthenticity("000000000000").valid, false); // identical digits
+  assert.equal(validateUtrAuthenticity("111111111111").valid, false);
+  assert.equal(validateUtrAuthenticity("123456789012").valid, false); // sequential
+  assert.equal(validateUtrAuthenticity("987654321098").valid, false); // sequential
+  assert.equal(validateUtrAuthenticity("121212121212").valid, false); // repetitive 2-digit cycle
+  assert.equal(validateUtrAuthenticity("123123123123").valid, false); // repetitive 3-digit cycle
+  assert.equal(validateUtrAuthenticity("111122221111").valid, false); // only 2 distinct digits (low entropy)
 });
 

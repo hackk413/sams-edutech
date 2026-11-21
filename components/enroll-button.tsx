@@ -22,12 +22,13 @@ export function EnrollButton({ courseId, courseTitle, price = 23999, enrolled }:
     upi_id: "samsedutech@okaxis",
     payee_name: "Sams Edutech",
     qr_image_url: "/upi-qr-default.svg",
-    auto_enroll: true,
+    auto_enroll: false,
     active: true,
   });
 
   const [utrNumber, setUtrNumber] = useState("");
   const [senderUpi, setSenderUpi] = useState("");
+  const [receiptScreenshot, setReceiptScreenshot] = useState<string | null>(null);
   const [copiedUpi, setCopiedUpi] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [statusMessage, setStatusMessage] = useState("");
@@ -87,6 +88,51 @@ export function EnrollButton({ courseId, courseTitle, price = 23999, enrolled }:
     setTimeout(() => setCopiedUpi(false), 2000);
   }
 
+  function handleReceiptChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      setErrorMessage("Please select a valid image file (PNG, JPG, WebP).");
+      return;
+    }
+
+    if (file.size > 8 * 1024 * 1024) {
+      setErrorMessage("Receipt image must be under 8MB.");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const img = new window.Image();
+      img.onload = () => {
+        // Compress screenshot to max 1200px width/height to save bandwidth
+        const canvas = document.createElement("canvas");
+        let { width, height } = img;
+        const maxDim = 1200;
+        if (width > maxDim || height > maxDim) {
+          if (width > height) {
+            height = Math.round((height * maxDim) / width);
+            width = maxDim;
+          } else {
+            width = Math.round((width * maxDim) / height);
+            height = maxDim;
+          }
+        }
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, width, height);
+          const compressed = canvas.toDataURL("image/jpeg", 0.78);
+          setReceiptScreenshot(compressed);
+        }
+      };
+      img.src = reader.result as string;
+    };
+    reader.readAsDataURL(file);
+  }
+
   // Generate mobile UPI Intent link (opens GPay, PhonePe, Paytm directly with prefilled amount)
   const upiIntentUrl = `upi://pay?pa=${encodeURIComponent(upiConfig.upi_id)}&pn=${encodeURIComponent(
     upiConfig.payee_name
@@ -121,6 +167,7 @@ export function EnrollButton({ courseId, courseTitle, price = 23999, enrolled }:
           amount: price,
           utr_number: cleanUtr,
           sender_upi_id: senderUpi.trim() || null,
+          screenshot_url: receiptScreenshot || null,
         }),
       });
 
@@ -134,8 +181,8 @@ export function EnrollButton({ courseId, courseTitle, price = 23999, enrolled }:
 
       setStatusMessage(
         data.enrollment_created
-          ? "Payment submitted! Your 12-digit UTR was recorded and course enrollment is active! Redirecting..."
-          : "Payment submitted successfully! Your 12-digit UTR is under verification. Redirecting to dashboard..."
+          ? "Payment verified! Your 12-digit UTR was recorded and course enrollment is active! Redirecting..."
+          : "Payment submitted successfully! Your 12-digit UTR is under verification with bank records. Redirecting to dashboard..."
       );
 
       setTimeout(() => {
@@ -320,6 +367,20 @@ export function EnrollButton({ courseId, courseTitle, price = 23999, enrolled }:
                   value={senderUpi}
                   onChange={(e) => setSenderUpi(e.target.value)}
                   style={{ height: "38px" }}
+                />
+              </div>
+
+              <div className="field" style={{ marginTop: "10px" }}>
+                <label htmlFor="receipt-screenshot" style={{ fontSize: "0.78rem", display: "flex", justifyContent: "space-between" }}>
+                  <span>Payment Screenshot / Receipt (Recommended)</span>
+                  {receiptScreenshot && <span style={{ color: "var(--green)", fontWeight: 700 }}>✓ Attached</span>}
+                </label>
+                <input
+                  id="receipt-screenshot"
+                  type="file"
+                  accept="image/*"
+                  onChange={handleReceiptChange}
+                  style={{ height: "36px", fontSize: "0.8rem", padding: "4px 8px" }}
                 />
               </div>
 

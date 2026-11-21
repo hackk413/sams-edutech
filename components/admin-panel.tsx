@@ -78,10 +78,11 @@ export function AdminPanel({
   const [savingUpiSettings, setSavingUpiSettings] = useState(false);
   const [uploadingQr, setUploadingQr] = useState(false);
   const [upiSettingsFeedback, setUpiSettingsFeedback] = useState("");
+  const [previewReceipt, setPreviewReceipt] = useState<{ url: string; student: string; utr: string } | null>(null);
 
   const [editUpiId, setEditUpiId] = useState(initialUpiConfig?.upi_id || "samsedutech@okaxis");
   const [editPayeeName, setEditPayeeName] = useState(initialUpiConfig?.payee_name || "Sams Edutech");
-  const [editAutoEnroll, setEditAutoEnroll] = useState(initialUpiConfig?.auto_enroll ?? true);
+  const [editAutoEnroll, setEditAutoEnroll] = useState(initialUpiConfig?.auto_enroll ?? false);
   const [editInstructions, setEditInstructions] = useState(initialUpiConfig?.instructions || "");
 
   // Assessments state
@@ -1948,6 +1949,16 @@ export function AdminPanel({
                                   Via: {p.sender_upi_id}
                                 </div>
                               )}
+                              {p.screenshot_url && (
+                                <button
+                                  type="button"
+                                  className="btn btn-secondary"
+                                  style={{ padding: "2px 7px", fontSize: "0.72rem", marginTop: 4, display: "inline-flex", alignItems: "center", gap: 4, color: "var(--blue)" }}
+                                  onClick={() => setPreviewReceipt({ url: p.screenshot_url!, student: p.student_name, utr: p.utr_number })}
+                                >
+                                  <Icon name="spark" size={12} /> View Receipt
+                                </button>
+                              )}
                             </td>
                             <td>
                               <span className={`payment-status-badge status-${p.status}`}>
@@ -2066,21 +2077,21 @@ export function AdminPanel({
                           <input
                             type="radio"
                             name="autoEnroll"
-                            checked={editAutoEnroll === true}
-                            onChange={() => setEditAutoEnroll(true)}
+                            checked={editAutoEnroll === false}
+                            onChange={() => setEditAutoEnroll(false)}
                             style={{ marginTop: 3 }}
                           />
-                          <span><strong>Instant Enrollment</strong> (Course unlocks immediately on 12-digit UTR submission; verify in bank later)</span>
+                          <span><strong>Manual Approval (Recommended &bull; 100% Anti-Fraud)</strong> &mdash; Keep course locked until you cross-check bank app/SMS and click Confirm. Zero risk of fake UTR brute-forcing.</span>
                         </label>
                         <label style={{ display: "flex", alignItems: "flex-start", gap: 8, fontSize: "0.8rem", cursor: "pointer" }}>
                           <input
                             type="radio"
                             name="autoEnroll"
-                            checked={editAutoEnroll === false}
-                            onChange={() => setEditAutoEnroll(false)}
+                            checked={editAutoEnroll === true}
+                            onChange={() => setEditAutoEnroll(true)}
                             style={{ marginTop: 3 }}
                           />
-                          <span><strong>Manual Approval</strong> (Keep course locked until you click Confirm in this dashboard)</span>
+                          <span><strong>Instant Auto-Enroll Mode</strong> &mdash; Course unlocks immediately on 12-digit UTR submission. Requires manual audits or bank webhook to catch forged reference numbers.</span>
                         </label>
                       </div>
                     </div>
@@ -2114,6 +2125,40 @@ export function AdminPanel({
                 </div>
               </div>
             </div>
+
+            {/* Student Payment Receipt Preview Modal */}
+            {previewReceipt && (
+              <div className="payment-modal-backdrop" onClick={() => setPreviewReceipt(null)}>
+                <div className="payment-modal-card" style={{ maxWidth: 520, textAlign: "left" }} onClick={(e) => e.stopPropagation()}>
+                  <div className="modal-header" style={{ marginBottom: 14 }}>
+                    <div>
+                      <h3 style={{ margin: 0, fontSize: "1.1rem" }}>Payment Receipt Proof</h3>
+                      <p style={{ margin: "2px 0 0", fontSize: "0.8rem", color: "var(--muted)" }}>
+                        {previewReceipt.student} &bull; UTR: <code>{previewReceipt.utr}</code>
+                      </p>
+                    </div>
+                    <button type="button" className="modal-close-btn" onClick={() => setPreviewReceipt(null)} aria-label="Close">
+                      &times;
+                    </button>
+                  </div>
+                  <div style={{ maxHeight: "70vh", overflowY: "auto", borderRadius: 8, border: "1px solid var(--line)" }}>
+                    <Image
+                      src={previewReceipt.url}
+                      alt="Student payment receipt"
+                      width={500}
+                      height={700}
+                      style={{ width: "100%", height: "auto", display: "block" }}
+                      unoptimized
+                    />
+                  </div>
+                  <div style={{ marginTop: 14, display: "flex", justifyContent: "flex-end", gap: 8 }}>
+                    <button type="button" className="btn btn-secondary" onClick={() => setPreviewReceipt(null)}>
+                      Close Preview
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
