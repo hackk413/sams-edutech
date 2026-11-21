@@ -193,3 +193,23 @@ test("validateIndianPhoneNumber validates and normalizes Indian mobile numbers",
   assert.equal(validateIndianPhoneNumber("").isValid, false);
   assert.equal(validateIndianPhoneNumber(null).isValid, false);
 });
+
+// ── UPI Reference Number (UTR) Validation Helper ──
+function isValidUpiUtr(utr) {
+  if (!utr || typeof utr !== "string") return false;
+  const clean = utr.trim().replace(/\s+/g, "");
+  return /^\d{12}$/.test(clean);
+}
+
+test("isValidUpiUtr validates 12-digit Indian UPI Reference Numbers", () => {
+  assert.equal(isValidUpiUtr("432109876543"), true);
+  assert.equal(isValidUpiUtr(" 432109876543 "), true);
+  assert.equal(isValidUpiUtr("1234 5678 9012"), true);
+  // Invalid UTRs
+  assert.equal(isValidUpiUtr("43210987654"), false); // 11 digits
+  assert.equal(isValidUpiUtr("4321098765432"), false); // 13 digits
+  assert.equal(isValidUpiUtr("43210987ABCD"), false); // alphanumeric
+  assert.equal(isValidUpiUtr(""), false);
+  assert.equal(isValidUpiUtr(null), false);
+});
+

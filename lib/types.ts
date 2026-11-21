@@ -123,3 +123,34 @@ export type AdminAuditLog = {
   timestamp: string;
   severity: "info" | "warning" | "security";
 };
+
+export type UpiPaymentRecord = {
+  id: string;
+  user_id: string;
+  student_name: string;
+  student_email: string;
+  student_phone?: string | null;
+  course_id: string;
+  course_title: string;
+  amount: number;
+  utr_number: string;
+  sender_upi_id?: string | null;
+  screenshot_url?: string | null;
+  status: "pending_verification" | "verified" | "rejected";
+  enrollment_id?: string | null;
+  admin_notes?: string | null;
+  verified_by?: string | null;
+  verified_at?: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type UpiGatewayConfig = {
+  upi_id: string;
+  payee_name: string;
+  qr_image_url: string;
+  auto_enroll: boolean;
+  instructions?: string;
+  active: boolean;
+  updated_at?: string;
+};

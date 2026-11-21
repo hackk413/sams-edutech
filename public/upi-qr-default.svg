@@ -1,0 +1,123 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#f8fafc"/>
+    </linearGradient>
+    <linearGradient id="upiGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#097939"/>
+      <stop offset="100%" stop-color="#ed7524"/>
+    </linearGradient>
+  </defs>
+  
+  <!-- Outer Card Frame -->
+  <rect x="8" y="8" width="384" height="384" rx="24" fill="url(#bgGrad)" stroke="#e2e8f0" stroke-width="3"/>
+  
+  <!-- Header Bar -->
+  <rect x="8" y="8" width="384" height="56" rx="24" fill="#0f172a"/>
+  <rect x="8" y="40" width="384" height="24" fill="#0f172a"/>
+  <text x="200" y="44" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="18" font-weight="700" fill="#ffffff" letter-spacing="1">
+    SAMS EDUTECH &bull; UPI SCANNER
+  </text>
+  
+  <!-- QR Code Position Detection Corners (Outer squares) -->
+  <!-- Top Left -->
+  <rect x="45" y="85" width="70" height="70" rx="8" fill="none" stroke="#0f172a" stroke-width="8"/>
+  <rect x="63" y="103" width="34" height="34" rx="4" fill="#0f172a"/>
+  
+  <!-- Top Right -->
+  <rect x="285" y="85" width="70" height="70" rx="8" fill="none" stroke="#0f172a" stroke-width="8"/>
+  <rect x="303" y="103" width="34" height="34" rx="4" fill="#0f172a"/>
+  
+  <!-- Bottom Left -->
+  <rect x="45" y="245" width="70" height="70" rx="8" fill="none" stroke="#0f172a" stroke-width="8"/>
+  <rect x="63" y="263" width="34" height="34" rx="4" fill="#0f172a"/>
+  
+  <!-- QR Code Functional Data Grid Patterns -->
+  <g fill="#0f172a">
+    <!-- Top Row between corners -->
+    <rect x="135" y="85" width="14" height="14" rx="2"/>
+    <rect x="165" y="85" width="14" height="14" rx="2"/>
+    <rect x="195" y="85" width="28" height="14" rx="2"/>
+    <rect x="240" y="85" width="14" height="14" rx="2"/>
+    
+    <rect x="135" y="105" width="28" height="14" rx="2"/>
+    <rect x="180" y="105" width="14" height="14" rx="2"/>
+    <rect x="210" y="105" width="28" height="14" rx="2"/>
+    <rect x="255" y="105" width="14" height="14" rx="2"/>
+    
+    <rect x="150" y="125" width="14" height="14" rx="2"/>
+    <rect x="180" y="125" width="28" height="14" rx="2"/>
+    <rect x="225" y="125" width="14" height="14" rx="2"/>
+    <rect x="255" y="125" width="14" height="14" rx="2"/>
+    
+    <rect x="135" y="145" width="14" height="14" rx="2"/>
+    <rect x="165" y="145" width="42" height="14" rx="2"/>
+    <rect x="225" y="145" width="28" height="14" rx="2"/>
+    
+    <!-- Middle Core Elements -->
+    <rect x="45" y="175" width="28" height="14" rx="2"/>
+    <rect x="90" y="175" width="14" height="14" rx="2"/>
+    <rect x="120" y="175" width="14" height="14" rx="2"/>
+    <rect x="150" y="175" width="14" height="14" rx="2"/>
+    <rect x="240" y="175" width="14" height="14" rx="2"/>
+    <rect x="270" y="175" width="28" height="14" rx="2"/>
+    <rect x="315" y="175" width="40" height="14" rx="2"/>
+    
+    <rect x="60" y="195" width="14" height="14" rx="2"/>
+    <rect x="90" y="195" width="28" height="14" rx="2"/>
+    <rect x="135" y="195" width="28" height="14" rx="2"/>
+    <rect x="240" y="195" width="28" height="14" rx="2"/>
+    <rect x="285" y="195" width="14" height="14" rx="2"/>
+    <rect x="330" y="195" width="25" height="14" rx="2"/>
+    
+    <rect x="45" y="215" width="14" height="14" rx="2"/>
+    <rect x="75" y="215" width="28" height="14" rx="2"/>
+    <rect x="120" y="215" width="14" height="14" rx="2"/>
+    <rect x="270" y="215" width="14" height="14" rx="2"/>
+    <rect x="300" y="215" width="28" height="14" rx="2"/>
+    <rect x="345" y="215" width="10" height="14" rx="2"/>
+    
+    <!-- Bottom Right Quadrant Patterns -->
+    <rect x="135" y="245" width="28" height="14" rx="2"/>
+    <rect x="180" y="245" width="14" height="14" rx="2"/>
+    <rect x="210" y="245" width="28" height="14" rx="2"/>
+    <rect x="255" y="245" width="42" height="14" rx="2"/>
+    <rect x="315" y="245" width="40" height="14" rx="2"/>
+    
+    <rect x="150" y="265" width="14" height="14" rx="2"/>
+    <rect x="180" y="265" width="42" height="14" rx="2"/>
+    <rect x="240" y="265" width="14" height="14" rx="2"/>
+    <rect x="270" y="265" width="28" height="14" rx="2"/>
+    <rect x="315" y="265" width="14" height="14" rx="2"/>
+    <rect x="345" y="265" width="10" height="14" rx="2"/>
+    
+    <rect x="135" y="285" width="14" height="14" rx="2"/>
+    <rect x="165" y="285" width="28" height="14" rx="2"/>
+    <rect x="210" y="285" width="14" height="14" rx="2"/>
+    <rect x="240" y="285" width="42" height="14" rx="2"/>
+    <rect x="300" y="285" width="28" height="14" rx="2"/>
+    <rect x="345" y="285" width="10" height="14" rx="2"/>
+    
+    <rect x="135" y="305" width="42" height="10" rx="2"/>
+    <rect x="195" y="305" width="28" height="10" rx="2"/>
+    <rect x="240" y="305" width="14" height="10" rx="2"/>
+    <rect x="270" y="305" width="28" height="10" rx="2"/>
+    <rect x="315" y="305" width="40" height="10" rx="2"/>
+  </g>
+  
+  <!-- Center UPI Badge Medallion -->
+  <rect x="170" y="170" width="60" height="60" rx="14" fill="#ffffff" stroke="#0f172a" stroke-width="3"/>
+  <rect x="174" y="174" width="52" height="52" rx="10" fill="url(#upiGrad)"/>
+  <text x="200" y="206" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="16" font-weight="900" fill="#ffffff">
+    UPI
+  </text>
+  
+  <!-- Bottom Supported Apps Bar -->
+  <g transform="translate(30, 332)">
+    <rect x="0" y="0" width="340" height="42" rx="10" fill="#f1f5f9" stroke="#e2e8f0"/>
+    <text x="170" y="26" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12" font-weight="600" fill="#334155">
+      GPay &bull; PhonePe &bull; Paytm &bull; BHIM &bull; CRED
+    </text>
+  </g>
+</svg>

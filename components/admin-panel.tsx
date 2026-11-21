@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { Icon } from "@/components/icon";
 import { BrandLogo } from "@/components/brand-logo";
 import { displayDate, displayDateTime } from "@/lib/utils";
@@ -12,6 +13,8 @@ import type {
   StudentProfileAdminView,
   AdminAuditLog,
   CoursePricingConfig,
+  UpiPaymentRecord,
+  UpiGatewayConfig,
 } from "@/lib/types";
 
 interface AdminPanelProps {
@@ -21,6 +24,8 @@ interface AdminPanelProps {
   initialStudents: StudentProfileAdminView[];
   initialAuditLogs: AdminAuditLog[];
   initialPricing?: Record<string, CoursePricingConfig>;
+  initialPayments?: UpiPaymentRecord[];
+  initialUpiConfig?: UpiGatewayConfig;
 }
 
 export function AdminPanel({
@@ -30,6 +35,8 @@ export function AdminPanel({
   initialStudents,
   initialAuditLogs,
   initialPricing = {},
+  initialPayments = [],
+  initialUpiConfig,
 }: AdminPanelProps) {
   const router = useRouter();
   const [authenticated, setAuthenticated] = useState(initialAuthenticated);
@@ -49,7 +56,33 @@ export function AdminPanel({
   }, [authenticated]);
 
   // Active module tab
-  const [activeTab, setActiveTab] = useState<"overview" | "assessments" | "submissions" | "students" | "pricing" | "security">("overview");
+  const [activeTab, setActiveTab] = useState<
+    "overview" | "assessments" | "submissions" | "students" | "pricing" | "payments" | "security"
+  >("overview");
+
+  // UPI Payments & Gateway state
+  const [payments, setPayments] = useState<UpiPaymentRecord[]>(initialPayments);
+  const [upiConfig, setUpiConfig] = useState<UpiGatewayConfig>(
+    initialUpiConfig || {
+      upi_id: "samsedutech@okaxis",
+      payee_name: "Sams Edutech",
+      qr_image_url: "/upi-qr-default.svg",
+      auto_enroll: true,
+      active: true,
+    }
+  );
+  const [paymentFilter, setPaymentFilter] = useState<"all" | "pending_verification" | "verified" | "rejected">("all");
+  const [paymentSearch, setPaymentSearch] = useState("");
+  const [paymentActionLoading, setPaymentActionLoading] = useState<string | null>(null);
+  const [paymentFeedback, setPaymentFeedback] = useState("");
+  const [savingUpiSettings, setSavingUpiSettings] = useState(false);
+  const [uploadingQr, setUploadingQr] = useState(false);
+  const [upiSettingsFeedback, setUpiSettingsFeedback] = useState("");
+
+  const [editUpiId, setEditUpiId] = useState(initialUpiConfig?.upi_id || "samsedutech@okaxis");
+  const [editPayeeName, setEditPayeeName] = useState(initialUpiConfig?.payee_name || "Sams Edutech");
+  const [editAutoEnroll, setEditAutoEnroll] = useState(initialUpiConfig?.auto_enroll ?? true);
+  const [editInstructions, setEditInstructions] = useState(initialUpiConfig?.instructions || "");
 
   // Assessments state
   const [assessments, setAssessments] = useState<WeeklyAssessment[]>(initialAssessments);
@@ -155,6 +188,91 @@ export function AdminPanel({
     await fetch("/api/admin/auth", { method: "DELETE" });
     setAuthenticated(false);
     router.refresh();
+  }
+
+  // ── UPI PAYMENT HANDLERS ──
+  async function handleVerifyPayment(paymentId: string, action: "verify" | "reject") {
+    setPaymentActionLoading(paymentId);
+    setPaymentFeedback("");
+    try {
+      const res = await fetch("/api/admin/upi/verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ payment_id: paymentId, action }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        setPaymentFeedback(data.error || "Failed to update payment status.");
+        return;
+      }
+      setPayments((prev) =>
+        prev.map((p) => (p.id === paymentId ? (data.payment as UpiPaymentRecord) : p))
+      );
+      setPaymentFeedback(data.message);
+    } catch {
+      setPaymentFeedback("Network error updating payment verification.");
+    } finally {
+      setPaymentActionLoading(null);
+    }
+  }
+
+  async function handleSaveUpiSettings(e: React.FormEvent) {
+    e.preventDefault();
+    setSavingUpiSettings(true);
+    setUpiSettingsFeedback("");
+    try {
+      const res = await fetch("/api/admin/upi/settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          upi_id: editUpiId,
+          payee_name: editPayeeName,
+          auto_enroll: editAutoEnroll,
+          instructions: editInstructions,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        setUpiSettingsFeedback(data.error || "Failed to save settings.");
+        return;
+      }
+      setUpiConfig(data.config);
+      setUpiSettingsFeedback("UPI Gateway settings saved successfully!");
+    } catch {
+      setUpiSettingsFeedback("Network error saving UPI settings.");
+    } finally {
+      setSavingUpiSettings(false);
+    }
+  }
+
+  async function handleQrImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingQr(true);
+    setUpiSettingsFeedback("");
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      const res = await fetch("/api/admin/upi/upload-qr", {
+        method: "POST",
+        body: formData,
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        setUpiSettingsFeedback(data.error || "Failed to upload QR image.");
+        return;
+      }
+      setUpiConfig(data.config);
+      setUpiSettingsFeedback("Personal UPI QR code uploaded and activated for all students!");
+    } catch {
+      setUpiSettingsFeedback("Network error uploading QR image.");
+    } finally {
+      setUploadingQr(false);
+      e.target.value = "";
+    }
   }
 
   // ── ASSESSMENT HANDLERS ──
@@ -428,6 +546,25 @@ export function AdminPanel({
     );
   });
 
+  const pendingPaymentsCount = payments.filter((p) => p.status === "pending_verification").length;
+  const verifiedPayments = payments.filter((p) => p.status === "verified");
+  const totalUpiRevenue = verifiedPayments.reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+
+  const filteredPayments = payments.filter((p) => {
+    if (paymentFilter !== "all" && p.status !== paymentFilter) return false;
+    if (paymentSearch.trim()) {
+      const q = paymentSearch.toLowerCase().trim();
+      return (
+        p.utr_number.toLowerCase().includes(q) ||
+        p.student_name.toLowerCase().includes(q) ||
+        p.student_email.toLowerCase().includes(q) ||
+        p.course_title.toLowerCase().includes(q) ||
+        (p.sender_upi_id && p.sender_upi_id.toLowerCase().includes(q))
+      );
+    }
+    return true;
+  });
+
   const pendingCount = submissions.filter((s) => s.status === "submitted" || s.status === "under_review").length;
 
   return (
@@ -499,6 +636,18 @@ export function AdminPanel({
           </button>
           <button
             type="button"
+            className={`admin-tab-btn ${activeTab === "payments" ? "active" : ""}`}
+            onClick={() => setActiveTab("payments")}
+          >
+            <Icon name="check" size={15} /> UPI Payments &amp; Gateway
+            {pendingPaymentsCount > 0 && (
+              <span className="admin-count-pill" style={{ background: "var(--orange)", color: "#fff" }}>
+                {pendingPaymentsCount} pending
+              </span>
+            )}
+          </button>
+          <button
+            type="button"
             className={`admin-tab-btn ${activeTab === "security" ? "active" : ""}`}
             onClick={() => setActiveTab("security")}
           >
@@ -539,12 +688,12 @@ export function AdminPanel({
                 </div>
               </div>
 
-              <div className="card admin-kpi-card">
+              <div className="card admin-kpi-card" onClick={() => setActiveTab("payments")} style={{ cursor: "pointer" }}>
                 <span className="kpi-icon-wrap bg-green"><Icon name="check" size={18} /></span>
                 <div>
-                  <div className="admin-kpi-num">92%</div>
-                  <div className="admin-kpi-label">Cohort Passing Rate</div>
-                  <div className="admin-kpi-hint">Across verified modules</div>
+                  <div className="admin-kpi-num">₹{totalUpiRevenue.toLocaleString("en-IN")}</div>
+                  <div className="admin-kpi-label">UPI Collections</div>
+                  <div className="admin-kpi-hint">{pendingPaymentsCount} pending verification</div>
                 </div>
               </div>
             </div>
@@ -555,10 +704,17 @@ export function AdminPanel({
                 <div>
                   <h3 style={{ margin: 0, fontSize: "1.1rem", fontWeight: 800 }}>Instant Executive Actions</h3>
                   <p style={{ margin: "4px 0 0", color: "var(--muted)", fontSize: "0.84rem" }}>
-                    Publish new assessments, grade pending submissions, or inspect student records immediately.
+                    Publish new assessments, review student payments, or inspect student records immediately.
                   </p>
                 </div>
                 <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                  <button
+                    type="button"
+                    className="btn btn-primary"
+                    onClick={() => setActiveTab("payments")}
+                  >
+                    <Icon name="check" size={15} /> Review Payments ({pendingPaymentsCount})
+                  </button>
                   <button
                     type="button"
                     className="btn btn-orange btn-sm"
@@ -1629,7 +1785,339 @@ export function AdminPanel({
           </div>
         )}
 
-        {/* ── TAB 5: SECURITY & AUDIT LOGS ── */}
+        {/* ── TAB 5: UPI PAYMENTS & GATEWAY ── */}
+        {activeTab === "payments" && (
+          <div>
+            <div className="section-bar" style={{ marginBottom: 18 }}>
+              <div>
+                <h2 style={{ margin: 0, fontSize: "1.35rem", fontWeight: 800 }}>
+                  UPI Payments &amp; Gateway Settings
+                </h2>
+                <p style={{ margin: 0, color: "var(--muted)", fontSize: "0.86rem" }}>
+                  Verify student 12-digit UTR payment transactions, unlock/revoke course enrollments, and upload your personal UPI QR scanner.
+                </p>
+              </div>
+            </div>
+
+            {/* KPI Summary Cards */}
+            <div className="admin-kpi-row" style={{ marginBottom: 24 }}>
+              <div className="card admin-kpi-card">
+                <span className="kpi-icon-wrap bg-green"><Icon name="check" size={18} /></span>
+                <div>
+                  <div className="admin-kpi-num">₹{totalUpiRevenue.toLocaleString("en-IN")}</div>
+                  <div className="admin-kpi-label">Verified UPI Revenue</div>
+                  <div className="admin-kpi-hint">{verifiedPayments.length} student payments</div>
+                </div>
+              </div>
+
+              <div className="card admin-kpi-card">
+                <span className="kpi-icon-wrap bg-orange"><Icon name="spark" size={18} /></span>
+                <div>
+                  <div className="admin-kpi-num">{pendingPaymentsCount}</div>
+                  <div className="admin-kpi-label">Pending Verification</div>
+                  <div className="admin-kpi-hint">Cross-check UTR with bank app</div>
+                </div>
+              </div>
+
+              <div className="card admin-kpi-card">
+                <span className="kpi-icon-wrap bg-blue"><Icon name="grid" size={18} /></span>
+                <div>
+                  <div className="admin-kpi-num">{payments.length}</div>
+                  <div className="admin-kpi-label">Total Transactions</div>
+                  <div className="admin-kpi-hint">All recorded submissions</div>
+                </div>
+              </div>
+
+              <div className="card admin-kpi-card">
+                <span className="kpi-icon-wrap bg-purple"><Icon name="shield" size={18} /></span>
+                <div>
+                  <div className="admin-kpi-num" style={{ fontSize: "1rem", overflow: "hidden", textOverflow: "ellipsis" }}>
+                    {upiConfig.upi_id}
+                  </div>
+                  <div className="admin-kpi-label">Active UPI VPA</div>
+                  <div className="admin-kpi-hint">{upiConfig.auto_enroll ? "Auto-Enroll ON" : "Manual Approval"}</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Main 2-Column Grid */}
+            <div className="upi-admin-grid">
+              {/* Left Column: Submissions Queue */}
+              <div className="card" style={{ padding: 22 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12, marginBottom: 16 }}>
+                  <div>
+                    <h3 style={{ margin: 0, fontSize: "1.15rem", fontWeight: 800 }}>Student Payment Transactions</h3>
+                    <p style={{ margin: "2px 0 0", color: "var(--muted)", fontSize: "0.82rem" }}>
+                      Cross-verify the student&apos;s 12-digit UTR against your GPay / PhonePe / Paytm bank transaction history.
+                    </p>
+                  </div>
+
+                  {/* Search */}
+                  <input
+                    type="text"
+                    placeholder="Search UTR, student, email..."
+                    value={paymentSearch}
+                    onChange={(e) => setPaymentSearch(e.target.value)}
+                    style={{ height: 36, width: 230, fontSize: "0.82rem" }}
+                  />
+                </div>
+
+                {/* Filter Tabs */}
+                <div style={{ display: "flex", gap: 6, marginBottom: 16, overflowX: "auto" }}>
+                  {(["all", "pending_verification", "verified", "rejected"] as const).map((filterKey) => (
+                    <button
+                      key={filterKey}
+                      type="button"
+                      className={`btn btn-secondary ${paymentFilter === filterKey ? "active" : ""}`}
+                      onClick={() => setPaymentFilter(filterKey)}
+                      style={{
+                        padding: "5px 12px",
+                        fontSize: "0.78rem",
+                        borderColor: paymentFilter === filterKey ? "var(--blue)" : "var(--line)",
+                        background: paymentFilter === filterKey ? "var(--blue-soft)" : "transparent",
+                        color: paymentFilter === filterKey ? "var(--blue)" : "var(--muted)",
+                      }}
+                    >
+                      {filterKey === "all"
+                        ? `All (${payments.length})`
+                        : filterKey === "pending_verification"
+                        ? `Pending (${pendingPaymentsCount})`
+                        : filterKey === "verified"
+                        ? `Verified (${verifiedPayments.length})`
+                        : `Rejected (${payments.filter((p) => p.status === "rejected").length})`}
+                    </button>
+                  ))}
+                </div>
+
+                {paymentFeedback && (
+                  <div className="form-success" style={{ marginBottom: 14 }}>
+                    {paymentFeedback}
+                  </div>
+                )}
+
+                {/* Table */}
+                {filteredPayments.length === 0 ? (
+                  <div className="empty-state" style={{ padding: "36px 0" }}>
+                    <div className="empty-icon"><Icon name="check" size={24} /></div>
+                    <strong>No payments found</strong>
+                    <span>No transactions match the selected filter.</span>
+                  </div>
+                ) : (
+                  <div className="table-responsive">
+                    <table className="admin-table">
+                      <thead>
+                        <tr>
+                          <th>Student</th>
+                          <th>Course</th>
+                          <th>Amount</th>
+                          <th>12-Digit UTR</th>
+                          <th>Status</th>
+                          <th>Date</th>
+                          <th>Action</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filteredPayments.map((p) => (
+                          <tr key={p.id}>
+                            <td>
+                              <strong>{p.student_name}</strong>
+                              <div style={{ fontSize: "0.76rem", color: "var(--muted)" }}>{p.student_email}</div>
+                              {p.student_phone && <div style={{ fontSize: "0.74rem", color: "var(--muted)" }}>{p.student_phone}</div>}
+                            </td>
+                            <td>
+                              <span style={{ fontSize: "0.85rem", fontWeight: 600 }}>{p.course_title}</span>
+                            </td>
+                            <td>
+                              <strong style={{ color: "var(--ink)" }}>₹{Number(p.amount).toLocaleString("en-IN")}</strong>
+                            </td>
+                            <td>
+                              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                                <code style={{ fontWeight: 700, fontSize: "0.88rem" }}>{p.utr_number}</code>
+                                <button
+                                  type="button"
+                                  className="btn-copy-upi"
+                                  style={{ padding: "2px 6px", fontSize: "0.7rem" }}
+                                  onClick={() => navigator.clipboard.writeText(p.utr_number)}
+                                  title="Copy UTR to clipboard"
+                                >
+                                  Copy
+                                </button>
+                              </div>
+                              {p.sender_upi_id && (
+                                <div style={{ fontSize: "0.74rem", color: "var(--muted)", marginTop: 2 }}>
+                                  Via: {p.sender_upi_id}
+                                </div>
+                              )}
+                            </td>
+                            <td>
+                              <span className={`payment-status-badge status-${p.status}`}>
+                                {p.status === "verified" ? "VERIFIED" : p.status === "pending_verification" ? "PENDING" : "REJECTED"}
+                              </span>
+                            </td>
+                            <td style={{ fontSize: "0.76rem", color: "var(--muted)" }}>
+                              {displayDate(p.created_at)}
+                            </td>
+                            <td>
+                              <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                                {p.status !== "verified" && (
+                                  <button
+                                    type="button"
+                                    className="btn btn-primary"
+                                    style={{ padding: "4px 10px", fontSize: "0.74rem", background: "var(--green)", borderColor: "var(--green)" }}
+                                    onClick={() => handleVerifyPayment(p.id, "verify")}
+                                    disabled={paymentActionLoading === p.id}
+                                  >
+                                    Confirm
+                                  </button>
+                                )}
+                                {p.status !== "rejected" && (
+                                  <button
+                                    type="button"
+                                    className="btn btn-secondary"
+                                    style={{ padding: "4px 8px", fontSize: "0.74rem", color: "var(--red)" }}
+                                    onClick={() => handleVerifyPayment(p.id, "reject")}
+                                    disabled={paymentActionLoading === p.id}
+                                  >
+                                    Reject
+                                  </button>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+
+              {/* Right Column: Personal QR & Gateway Config */}
+              <div style={{ display: "grid", gap: 20 }}>
+                {/* Personal QR Upload Card */}
+                <div className="card" style={{ padding: 20 }}>
+                  <h3 style={{ margin: "0 0 4px", fontSize: "1.05rem", fontWeight: 800 }}>Personal UPI QR Code</h3>
+                  <p style={{ margin: "0 0 14px", color: "var(--muted)", fontSize: "0.8rem" }}>
+                    Upload your personal Google Pay, PhonePe, or Paytm QR code image. It immediately updates for all student checkouts.
+                  </p>
+
+                  <div className="upi-qr-preview-card">
+                    <Image
+                      src={upiConfig.qr_image_url}
+                      alt="Current Active QR Code"
+                      width={180}
+                      height={180}
+                      className="upi-qr-preview-img"
+                      unoptimized
+                    />
+                    <div style={{ fontSize: "0.75rem", color: "var(--muted)" }}>
+                      Active Scanner: <code>{upiConfig.qr_image_url}</code>
+                    </div>
+
+                    <label className="qr-upload-dropzone">
+                      <Icon name="spark" size={18} />
+                      <div style={{ fontWeight: 700, fontSize: "0.82rem", marginTop: 4, color: "var(--blue)" }}>
+                        {uploadingQr ? "Uploading QR Code..." : "Click to Upload New QR Image"}
+                      </div>
+                      <div style={{ fontSize: "0.74rem", color: "var(--muted)" }}>PNG, JPG, WebP from phone/computer</div>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleQrImageUpload}
+                        disabled={uploadingQr}
+                        style={{ display: "none" }}
+                      />
+                    </label>
+                  </div>
+                </div>
+
+                {/* Gateway Parameters Form */}
+                <div className="card" style={{ padding: 20 }}>
+                  <h3 style={{ margin: "0 0 12px", fontSize: "1.05rem", fontWeight: 800 }}>Gateway Credentials</h3>
+
+                  <form onSubmit={handleSaveUpiSettings}>
+                    <div className="field" style={{ marginBottom: 12 }}>
+                      <label style={{ fontSize: "0.78rem", fontWeight: 700 }}>Payee UPI ID / VPA</label>
+                      <input
+                        type="text"
+                        placeholder="e.g. yourname@okhdfcbank"
+                        value={editUpiId}
+                        onChange={(e) => setEditUpiId(e.target.value)}
+                        required
+                        style={{ height: 38 }}
+                      />
+                    </div>
+
+                    <div className="field" style={{ marginBottom: 12 }}>
+                      <label style={{ fontSize: "0.78rem", fontWeight: 700 }}>Payee Business Name</label>
+                      <input
+                        type="text"
+                        placeholder="e.g. Sams Edutech"
+                        value={editPayeeName}
+                        onChange={(e) => setEditPayeeName(e.target.value)}
+                        required
+                        style={{ height: 38 }}
+                      />
+                    </div>
+
+                    <div className="field" style={{ marginBottom: 14 }}>
+                      <label style={{ fontSize: "0.78rem", fontWeight: 700 }}>Course Access Mode</label>
+                      <div style={{ display: "grid", gap: 8, marginTop: 4 }}>
+                        <label style={{ display: "flex", alignItems: "flex-start", gap: 8, fontSize: "0.8rem", cursor: "pointer" }}>
+                          <input
+                            type="radio"
+                            name="autoEnroll"
+                            checked={editAutoEnroll === true}
+                            onChange={() => setEditAutoEnroll(true)}
+                            style={{ marginTop: 3 }}
+                          />
+                          <span><strong>Instant Enrollment</strong> (Course unlocks immediately on 12-digit UTR submission; verify in bank later)</span>
+                        </label>
+                        <label style={{ display: "flex", alignItems: "flex-start", gap: 8, fontSize: "0.8rem", cursor: "pointer" }}>
+                          <input
+                            type="radio"
+                            name="autoEnroll"
+                            checked={editAutoEnroll === false}
+                            onChange={() => setEditAutoEnroll(false)}
+                            style={{ marginTop: 3 }}
+                          />
+                          <span><strong>Manual Approval</strong> (Keep course locked until you click Confirm in this dashboard)</span>
+                        </label>
+                      </div>
+                    </div>
+
+                    <div className="field" style={{ marginBottom: 14 }}>
+                      <label style={{ fontSize: "0.78rem", fontWeight: 700 }}>Payment Instructions for Students</label>
+                      <textarea
+                        rows={2}
+                        value={editInstructions}
+                        onChange={(e) => setEditInstructions(e.target.value)}
+                        placeholder="Instructions displayed to students in checkout modal..."
+                        style={{ fontSize: "0.8rem", padding: "8px 10px", width: "100%", borderRadius: "8px", border: "1px solid var(--line)" }}
+                      />
+                    </div>
+
+                    {upiSettingsFeedback && (
+                      <div className="form-success" style={{ marginBottom: 12, fontSize: "0.82rem" }}>
+                        {upiSettingsFeedback}
+                      </div>
+                    )}
+
+                    <button
+                      type="submit"
+                      className="btn btn-orange"
+                      style={{ width: "100%", justifyContent: "center" }}
+                      disabled={savingUpiSettings}
+                    >
+                      {savingUpiSettings ? "Saving Settings..." : "Save Gateway Settings"}
+                    </button>
+                  </form>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── TAB 6: SECURITY & AUDIT LOGS ── */}
         {activeTab === "security" && (
           <div>
             <div className="section-bar" style={{ marginBottom: 18 }}>

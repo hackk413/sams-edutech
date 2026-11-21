@@ -48,6 +48,13 @@ Sams Edutech is a production-grade, highly secure Learning Management System (LM
    - Profile photos are auto-compressed to lightweight size and stored directly in the `profiles` PostgreSQL table.
    - Stored pictures display across all devices, the student dashboard, and the admin dossier console.
 
+10. **Direct UPI QR Scanner Gateway & Instant Course Unlock**:
+   - **Zero Gateway Fees**: Eliminate third-party gateway deductions and merchant account setup fees. Students pay directly to your personal or business UPI ID.
+   - **How the Server Verifies Payment**: Every UPI transaction generates an official **12-digit UTR / UPI Reference Number** (e.g. `432109876543`) on GPay, PhonePe, Paytm, and BHIM. The student submits their 12-digit UTR in the checkout modal.
+   - **Instant Course Unlock**: When enabled, the server validates the 12-digit UTR, prevents duplicates, records the payment, and unlocks course access in `enrollments` instantly so the student can start learning immediately.
+   - **Personal QR Upload**: Administrators can upload their custom UPI QR code image anytime in the `/admin` console with live preview. Images are saved to `public/uploads/` and served across all student checkout screens.
+   - **Admin Approvals & Revocation**: Administrators can cross-verify UTRs with their bank notifications and approve or revoke course access in 1 click.
+
 ---
 
 ## 📂 Project Structure
@@ -93,11 +100,11 @@ Follow these steps to initialize your database:
 2. In your Supabase Project Dashboard, navigate to **SQL Editor** -> **New Query**.
 3. Copy the entire contents of [`supabase/schema.sql`](supabase/schema.sql) and paste them into the editor.
 4. Click **Run**. This will create:
-   - Tables: `courses`, `course_pricing`, `profiles`, `enrollments`, `weekly_assessments`, `assessment_submissions`.
-   - Complete Row Level Security (RLS) policies protecting student records.
+   - Tables: `courses`, `course_pricing`, `profiles`, `enrollments`, `weekly_assessments`, `assessment_submissions`, `upi_payments`, `upi_settings`.
+   - Complete Row Level Security (RLS) policies protecting student records and payments.
    - Auto-provisioning trigger `on_auth_user_created` for new signups.
    - Starter industry courses with ₹28,000 / ₹23,999 pricing (and ₹30,000 / ₹26,000 for Cloud).
-   - Secure RPC functions `get_admin_student_directory()` and `get_admin_submissions_directory()`.
+   - Secure RPC functions `get_admin_student_directory()`, `get_admin_submissions_directory()`, and `get_admin_payments_directory()`.
 5. Go to **Authentication** -> **URL Configuration**:
    - **Site URL**: Set to your domain (e.g., `https://yourdomain.com`).
    - **Redirect URLs**: Add:
@@ -364,6 +371,43 @@ nano .env.production
 docker compose up -d --build
 ```
 Your application runs in an isolated, secure, auto-restarting container on port `3000`.
+
+---
+
+## 💳 Personal UPI QR Payment Gateway & Verification Guide
+
+### 1. How the UPI Payment Gateway Works Without Gateway Fees
+Traditional payment gateways (Razorpay, Cashfree, Stripe) require registered business entities, GST certificates, merchant account approvals, and charge 2%–3% in transaction fees.
+
+Sams Edutech implements a direct **Peer-to-Peer / Merchant UPI QR Scanner Architecture**:
+1. **Student Scans & Pays**: The checkout modal renders your personalized UPI QR Code and a direct **"Pay via UPI App"** button (which opens Google Pay, PhonePe, or Paytm automatically on mobile).
+2. **Bank Generates a 12-Digit UTR**: Every successful UPI transaction generates an official **12-digit UTR (Unique Transaction Reference) / UPI Ref Number** on the student's payment confirmation screen.
+3. **Student Enters 12-Digit UTR**: The student enters the 12-digit UTR number in the checkout modal.
+4. **Server Validates & Grants Access**:
+   - **Instant Enrollment Mode (Default)**: The server verifies that the UTR is a valid 12-digit number and has never been used before, logs the payment, and **instantly creates the course enrollment**. The student can begin learning immediately without waiting.
+   - **Manual Approval Mode**: The course remains locked until you cross-check the UTR in your bank app and click **"Confirm"** in the Admin Console.
+
+---
+
+### 2. How to Upload & Change Your Personal UPI QR Code
+You can update your personal QR code anytime directly from your phone or laptop with **zero code modifications**:
+
+1. Log into the Admin Console at `https://yourdomain.com/admin`.
+2. Click the **"UPI Payments & Gateway"** tab in the top navigation.
+3. Under **"Personal UPI QR Code"**, click **"Click to Upload New QR Image"**.
+4. Select any screenshot or image of your Google Pay, PhonePe, Paytm, or Bank QR code (`.png`, `.jpg`, `.webp`).
+5. The image is automatically uploaded to `public/uploads/upi-qr.png`, saved to the configuration, and immediately activated across all course checkout screens!
+6. Enter your **Payee UPI ID** (e.g. `yourname@okhdfcbank` or `samsedutech@upi`) and **Business Name**, then click **Save Gateway Settings**.
+
+---
+
+### 3. How to Verify Payments & Prevent Fraud
+1. When a student submits a payment, you will receive an alert in `/admin` with their Name, Email, Course, Amount, and 12-Digit UTR.
+2. Open your Google Pay / PhonePe / Paytm or Bank Statement and search for the 12-digit UTR.
+3. In `/admin`:
+   - If the payment was received: Click **"Confirm"** to permanently verify the record.
+   - If fake, forged, or mismatched: Click **"Reject"** — the server will **immediately revoke and lock** the student's course access!
+4. Duplicate UTR protection is built-in: The same 12-digit UTR cannot be submitted more than once across the entire platform.
 
 ---
 

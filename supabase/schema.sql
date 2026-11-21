@@ -149,6 +149,47 @@ create table if not exists public.assessment_submissions (
 create index if not exists submissions_user_idx on public.assessment_submissions(user_id);
 create index if not exists submissions_assessment_idx on public.assessment_submissions(assessment_id);
 
+-- ── 6B. UPI PAYMENTS & 12-DIGIT UTR TRANSACTIONS TABLE ──
+create table if not exists public.upi_payments (
+  id text primary key,
+  user_id uuid not null references auth.users(id) on delete cascade,
+  student_name text not null,
+  student_email text not null,
+  student_phone text,
+  course_id text not null,
+  course_title text not null,
+  amount numeric(10,2) not null check (amount >= 0),
+  utr_number text not null unique check (utr_number ~ '^\d{12}$'),
+  sender_upi_id text,
+  screenshot_url text,
+  status text not null default 'pending_verification' check (status in ('pending_verification', 'verified', 'rejected')),
+  admin_notes text,
+  verified_by text,
+  verified_at timestamptz,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists upi_payments_user_idx on public.upi_payments(user_id);
+create index if not exists upi_payments_utr_idx on public.upi_payments(utr_number);
+
+-- ── 6C. UPI GATEWAY & QR SETTINGS TABLE ──
+create table if not exists public.upi_settings (
+  id text primary key default 'primary',
+  upi_id text not null default 'samsedutech@okaxis',
+  payee_name text not null default 'Sams Edutech',
+  qr_image_url text not null default '/upi-qr-default.svg',
+  auto_enroll boolean not null default true,
+  instructions text,
+  active boolean not null default true,
+  updated_at timestamptz not null default now()
+);
+
+-- Seed default UPI settings
+insert into public.upi_settings (id, upi_id, payee_name, qr_image_url, auto_enroll, active)
+values ('primary', 'samsedutech@okaxis', 'Sams Edutech', '/upi-qr-default.svg', true, true)
+on conflict (id) do nothing;
+
 -- ── 7. TRIGGERS: AUTO PROFILE CREATION & UPDATED_AT ──
 create or replace function public.handle_new_user()
 returns trigger
@@ -205,6 +246,8 @@ alter table public.profiles enable row level security;
 alter table public.enrollments enable row level security;
 alter table public.weekly_assessments enable row level security;
 alter table public.assessment_submissions enable row level security;
+alter table public.upi_payments enable row level security;
+alter table public.upi_settings enable row level security;
 
 -- Revoke broad permissions
 revoke all on table public.courses from anon, authenticated;
@@ -213,6 +256,8 @@ revoke all on table public.profiles from anon, authenticated;
 revoke all on table public.enrollments from anon, authenticated;
 revoke all on table public.weekly_assessments from anon, authenticated;
 revoke all on table public.assessment_submissions from anon, authenticated;
+revoke all on table public.upi_payments from anon, authenticated;
+revoke all on table public.upi_settings from anon, authenticated;
 
 -- Grant minimal safe access
 grant select on table public.courses to anon, authenticated;
@@ -221,6 +266,8 @@ grant select, update on table public.profiles to authenticated;
 grant select, insert on table public.enrollments to authenticated;
 grant select on table public.weekly_assessments to anon, authenticated;
 grant select, insert, update on table public.assessment_submissions to authenticated;
+grant select on table public.upi_settings to anon, authenticated;
+grant select, insert on table public.upi_payments to authenticated;
 
 -- Courses RLS
 drop policy if exists "courses_are_publicly_readable" on public.courses;
@@ -288,6 +335,27 @@ create policy "students_update_own_submission"
 on public.assessment_submissions for update
 to authenticated
 using ((select auth.uid()) = user_id)
+with check ((select auth.uid()) = user_id);
+
+-- UPI Settings: Readable by everyone
+drop policy if exists "upi_settings_publicly_readable" on public.upi_settings;
+create policy "upi_settings_publicly_readable"
+on public.upi_settings for select
+to anon, authenticated
+using (true);
+
+-- UPI Payments: Students can view their own payments
+drop policy if exists "students_view_own_payments" on public.upi_payments;
+create policy "students_view_own_payments"
+on public.upi_payments for select
+to authenticated
+using ((select auth.uid()) = user_id);
+
+-- UPI Payments: Students can insert their own payment
+drop policy if exists "students_submit_own_payment" on public.upi_payments;
+create policy "students_submit_own_payment"
+on public.upi_payments for insert
+to authenticated
 with check ((select auth.uid()) = user_id);
 
 -- ── 9. REAL STUDENT DIRECTORY RPC FUNCTION (Admin Definer) ──
@@ -387,6 +455,46 @@ end;
 $$;
 
 grant execute on function public.get_admin_submissions_directory() to anon, authenticated;
+
+-- ── 9C. REAL UPI PAYMENTS RPC FUNCTION (Admin Definer) ──
+create or replace function public.get_admin_payments_directory()
+returns json
+language plpgsql
+security definer
+set search_path = public, auth
+as $$
+declare
+  result json;
+begin
+  select json_agg(
+    json_build_object(
+      'id', p.id,
+      'user_id', p.user_id,
+      'student_name', p.student_name,
+      'student_email', p.student_email,
+      'student_phone', p.student_phone,
+      'course_id', p.course_id,
+      'course_title', p.course_title,
+      'amount', p.amount,
+      'utr_number', p.utr_number,
+      'sender_upi_id', p.sender_upi_id,
+      'screenshot_url', p.screenshot_url,
+      'status', p.status,
+      'admin_notes', p.admin_notes,
+      'verified_by', p.verified_by,
+      'verified_at', p.verified_at,
+      'created_at', p.created_at,
+      'updated_at', p.updated_at
+    )
+  ) into result
+  from public.upi_payments p
+  order by p.created_at desc;
+
+  return coalesce(result, '[]'::json);
+end;
+$$;
+
+grant execute on function public.get_admin_payments_directory() to anon, authenticated;
 
 -- ── 10. SEED DATA: 4-MONTH & 3-MONTH INDUSTRY ACCELERATOR PROGRAMS ──
 insert into public.courses (

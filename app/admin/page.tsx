@@ -8,6 +8,7 @@ import {
   getAdminAuditLogs,
 } from "@/lib/assessments";
 import { getDynamicCoursePricing } from "@/lib/courses-server";
+import { getUpiPayments, getUpiConfig } from "@/lib/payments";
 import { AdminPanel } from "@/components/admin-panel";
 
 export const metadata: Metadata = {
@@ -20,12 +21,14 @@ export default async function AdminPage() {
   const token = cookieStore.get("sams_admin_session")?.value;
   const isAuthenticated = verifyAdminSessionToken(token);
 
-  const [assessments, submissions, students, auditLogs, pricing] = await Promise.all([
+  const [assessments, submissions, students, auditLogs, pricing, payments, upiConfig] = await Promise.all([
     getWeeklyAssessments(false),
     getSubmissions(),
     getStudentProfilesAdmin(),
     getAdminAuditLogs(),
     getDynamicCoursePricing(),
+    getUpiPayments(),
+    getUpiConfig(),
   ]);
 
   return (
@@ -36,6 +39,8 @@ export default async function AdminPage() {
       initialStudents={students}
       initialAuditLogs={auditLogs}
       initialPricing={pricing}
+      initialPayments={payments}
+      initialUpiConfig={upiConfig}
     />
   );
 }
