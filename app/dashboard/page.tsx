@@ -9,6 +9,7 @@ import { UserAvatar } from "@/components/user-avatar";
 import { WeeklyAssessmentsTab } from "@/components/weekly-assessments-tab";
 import { averageProgress, clampProgress, completedCourses, inProgressCourses, recommendedCourses } from "@/lib/lms";
 import { getWeeklyAssessments, getSubmissions, recordRealStudent } from "@/lib/assessments";
+import { getUpiPayments } from "@/lib/payments";
 import { COURSES } from "@/lib/courses";
 import type { Enrollment, Course, Profile } from "@/lib/types";
 
@@ -30,13 +31,19 @@ export default async function DashboardPage({
     { data: courses },
     weeklyAssessments,
     studentSubmissions,
+    allPayments,
   ] = await Promise.all([
     supabase.from("profiles").select("*").eq("id", user.id).maybeSingle(),
     supabase.from("enrollments").select("*, course:courses(*)").eq("user_id", user.id).order("enrolled_at", { ascending: false }),
     supabase.from("courses").select("*").order("created_at", { ascending: true }),
     getWeeklyAssessments(true),
     getSubmissions(user.id),
+    getUpiPayments(),
   ]);
+
+  const pendingPayments = allPayments.filter(
+    (p) => p.user_id === user.id && p.status === "pending_verification"
+  );
 
   const typedProfile = profile as Profile | null;
   const typedEnrollments = (enrollments ?? []) as unknown as Enrollment[];
@@ -145,6 +152,41 @@ export default async function DashboardPage({
                 </div>
               </div>
             </div>
+
+            {/* ── PENDING VERIFICATION NOTICES ── */}
+            {pendingPayments.map((p) => (
+              <div
+                key={p.id}
+                className="card"
+                style={{
+                  padding: "14px 18px",
+                  borderRadius: 10,
+                  border: "1px solid var(--orange)",
+                  background: "var(--orange-soft, rgba(230, 81, 0, 0.08))",
+                  marginBottom: 18,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  flexWrap: "wrap",
+                  gap: 12,
+                }}
+              >
+                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                  <Icon name="clock" size={22} style={{ color: "var(--orange)", flexShrink: 0 }} />
+                  <div>
+                    <strong style={{ fontSize: "0.92rem", color: "var(--ink)" }}>
+                      Payment Under Faculty Verification: {p.course_title}
+                    </strong>
+                    <p style={{ margin: "2px 0 0", fontSize: "0.8rem", color: "var(--muted)" }}>
+                      Your 12-digit UTR <code>{p.utr_number}</code> is currently being cross-checked against bank records. Course access will unlock as soon as verified by admissions.
+                    </p>
+                  </div>
+                </div>
+                <span className="payment-status-badge status-pending_verification" style={{ fontSize: "0.75rem" }}>
+                  AWAITING ADMIN APPROVAL
+                </span>
+              </div>
+            ))}
 
             {/* ── INTERACTIVE TAB SWITCHER (WEEKLY ASSESSMENTS vs ENROLLED PROGRAMS) ── */}
             <div className="dashboard-tab-bar" role="tablist" aria-label="Dashboard views">
