@@ -95,26 +95,29 @@ function VictorianCornerSvg({ position }: { position: "tl" | "tr" | "bl" | "br" 
 }
 
 /**
- * Ultra-crisp vector SVG Certificate replicating the uploaded reference template:
+ * Ultra-crisp vector SVG Certificate:
  * - Proper Landscape ratio (680 x 430)
  * - Royal Navy & Gold borders with beaded trim
  * - SAMS EDUTECH header
- * - Gothic "Certificate of Completion"
- * - Cursive recipient name
+ * - Unified professional serif "Certificate of Completion"
+ * - Dignified recipient name typography
  * - Dean & Provost signatures
  * - Official Company Logo (/logo.png) in center box
  * - Gold embossed seal medallion
+ * - Example vs. Original distinction (watermark, hash, specimen strip)
  */
 function CertificateSvgDocument({
   courseTitle,
   certId,
   verificationHash,
   issueDate,
+  isExample = true,
 }: {
   courseTitle: string;
   certId: string;
   verificationHash: string;
   issueDate: string;
+  isExample?: boolean;
 }) {
   const formalName = formatRecipientName();
 
@@ -124,7 +127,7 @@ function CertificateSvgDocument({
       className="cert-vector-svg"
       xmlns="http://www.w3.org/2000/svg"
       role="img"
-      aria-label={`Certificate of Completion for ${formalName}`}
+      aria-label={`${isExample ? "Example " : ""}Certificate of Completion for ${formalName}`}
     >
       <defs>
         {/* Gold Radial Gradient for Seal */}
@@ -150,13 +153,20 @@ function CertificateSvgDocument({
         </pattern>
 
         <style>{`
-          @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Great+Vibes&family=Pinyon+Script&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap');
-          .royal-recipient-text {
-            font-family: 'Pinyon Script', 'Great Vibes', 'Alex Brush', cursive;
-            font-size: 44px;
-            font-weight: 500;
+          @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800;900&family=Playfair+Display:ital,wght@0,600;0,700;0,800;1,600&family=Great+Vibes&display=swap');
+          .royal-cert-title-font {
+            font-family: 'Playfair Display', 'Cinzel', Georgia, 'Times New Roman', serif;
+            font-size: 26px;
+            font-weight: 700;
+            letter-spacing: 1.2px;
             fill: #0c2340;
-            letter-spacing: 0.5px;
+          }
+          .royal-recipient-pro {
+            font-family: 'Playfair Display', 'Cinzel', Georgia, 'Times New Roman', serif;
+            font-size: 30px;
+            font-weight: 800;
+            letter-spacing: 6px;
+            fill: #0c2340;
           }
         `}</style>
       </defs>
@@ -210,6 +220,50 @@ function CertificateSvgDocument({
         SAMS EDUTECH
       </text>
 
+      {/* ── Prominent DUPLICATE Watermark for Dashboard Example Certificate ── */}
+      {isExample && (
+        <g transform="rotate(-22, 340, 215)" pointerEvents="none" aria-hidden="true">
+          <rect
+            x="115"
+            y="180"
+            width="450"
+            height="70"
+            rx="8"
+            fill="rgba(220, 38, 38, 0.04)"
+            stroke="#dc2626"
+            strokeWidth="2.5"
+            strokeDasharray="9 6"
+            opacity="0.22"
+          />
+          <text
+            x="340"
+            y="230"
+            textAnchor="middle"
+            fontFamily="'Cinzel', 'Arial Black', Impact, sans-serif"
+            fontSize="50"
+            fontWeight="900"
+            letterSpacing="18"
+            fill="#dc2626"
+            opacity="0.24"
+          >
+            DUPLICATE
+          </text>
+          <text
+            x="340"
+            y="245"
+            textAnchor="middle"
+            fontFamily="'Cinzel', Georgia, serif"
+            fontSize="9"
+            fontWeight="800"
+            letterSpacing="5"
+            fill="#dc2626"
+            opacity="0.28"
+          >
+            EXAMPLE CERTIFICATE • NOT AN ORIGINAL
+          </text>
+        </g>
+      )}
+
       {/* ── 1. Company Name at Top ── */}
       <text
         x="340"
@@ -236,14 +290,16 @@ function CertificateSvgDocument({
         INSTITUTE OF ADVANCED ENGINEERING &amp; TECHNOLOGY
       </text>
 
-      {/* ── 2. Title: Certificate of Completion ── */}
+      {/* ── 2. Title: Certificate of Completion (Unified Single Professional Font) ── */}
       <text
         x="340"
         y="108"
         textAnchor="middle"
-        fontFamily="'UnifrakturMaguntia', 'MedievalSharp', Georgia, serif"
-        fontSize="30"
+        className="royal-cert-title-font"
+        fontFamily="'Playfair Display', 'Cinzel', Georgia, 'Times New Roman', serif"
+        fontSize="26"
         fontWeight="700"
+        letterSpacing="1.2"
         fill="#0c2340"
       >
         Certificate of Completion
@@ -262,15 +318,16 @@ function CertificateSvgDocument({
         PROUDLY PRESENTED TO
       </text>
 
-      {/* ── 4. Recipient Name (Aesthetic Royal Calligraphic Script) ── */}
+      {/* ── 4. Recipient Name (Dignified Professional Serif Typography) ── */}
       <text
         x="340"
-        y="170"
+        y="166"
         textAnchor="middle"
-        className="royal-recipient-text"
-        fontFamily="'Pinyon Script', 'Great Vibes', 'Alex Brush', cursive"
-        fontSize="44"
-        fontWeight="500"
+        className="royal-recipient-pro"
+        fontFamily="'Playfair Display', 'Cinzel', Georgia, 'Times New Roman', serif"
+        fontSize="30"
+        fontWeight="800"
+        letterSpacing="6"
         fill="#0c2340"
       >
         {formalName}
@@ -355,7 +412,7 @@ function CertificateSvgDocument({
         ACADEMIC DEAN &amp; PROVOST
       </text>
 
-      {/* Center Company Logo Box (Replaces "LOGO" in original image) */}
+      {/* Center Company Logo Box */}
       <g transform="translate(298, 282)">
         <rect x="0" y="0" width="84" height="46" fill="#ffffff" stroke="#0c2340" strokeWidth="1.5" />
         <rect x="3" y="3" width="78" height="40" fill="none" stroke="#d4af37" strokeWidth="1" />
@@ -416,24 +473,44 @@ function CertificateSvgDocument({
         {/* Inner Navy Ring */}
         <circle cx="0" cy="0" r="18" fill="#0c2340" stroke="#f3d078" strokeWidth="1" strokeDasharray="2 1.5" />
         <text x="0" y="-4" textAnchor="middle" fontSize="10" fill="#fef08a">&#9733;</text>
-        <text x="0" y="5" textAnchor="middle" fontFamily="'Cinzel', serif" fontSize="4.8" fontWeight="800" letterSpacing="0.8" fill="#fef08a">VERIFIED</text>
-        <text x="0" y="11" textAnchor="middle" fontFamily="'Cinzel', serif" fontSize="3.8" fontWeight="700" fill="#d4af37">ISO 9001</text>
-      </g>
-
-      {/* ── Genuine Security Verification Footer Strip ── */}
-      <line x1="50" y1="365" x2="630" y2="365" stroke="#0c2340" strokeWidth="0.8" strokeDasharray="3 3" opacity="0.3" />
-      <text x="75" y="380" fontFamily="monospace" fontSize="7" fill="#4a5568">
-        CERT ID: {certId}
-      </text>
-      <text x="340" y="380" textAnchor="middle" fontFamily="monospace" fontSize="7" fill="#0f3460">
-        SHA-256 HASH: {verificationHash}
-      </text>
-      <g transform="translate(555, 377)">
-        <circle cx="0" cy="-2.5" r="2.5" fill="#16a34a" />
-        <text x="6" y="0" fontFamily="'Playfair Display', serif" fontSize="7" fontWeight="700" fill="#16a34a">
-          Genuine &amp; Verifiable
+        <text x="0" y="5" textAnchor="middle" fontFamily="'Cinzel', serif" fontSize="4.6" fontWeight="800" letterSpacing="0.8" fill="#fef08a">
+          {isExample ? "SAMPLE" : "VERIFIED"}
+        </text>
+        <text x="0" y="11" textAnchor="middle" fontFamily="'Cinzel', serif" fontSize="3.8" fontWeight="700" fill="#d4af37">
+          {isExample ? "PREVIEW" : "ISO 9001"}
         </text>
       </g>
+
+      {/* ── Security Strip: For Example vs. Original Certificate ── */}
+      <line x1="50" y1="365" x2="630" y2="365" stroke="#0c2340" strokeWidth="0.8" strokeDasharray="3 3" opacity="0.25" />
+      {isExample ? (
+        <>
+          <text x="75" y="380" fontFamily="'Playfair Display', Georgia, serif" fontSize="7.5" fontWeight="700" letterSpacing="0.8" fill="#718096">
+            SPECIMEN PREVIEW
+          </text>
+          <text x="340" y="380" textAnchor="middle" fontFamily="'Playfair Display', Georgia, serif" fontSize="7.5" fontStyle="italic" fill="#718096">
+            Original certificate with cryptographic SHA-256 hash is awarded upon course completion
+          </text>
+          <text x="605" y="380" textAnchor="end" fontFamily="'Playfair Display', Georgia, serif" fontSize="7.5" fontWeight="700" letterSpacing="0.8" fill="#b8860b">
+            SAMPLE ONLY
+          </text>
+        </>
+      ) : (
+        <>
+          <text x="75" y="380" fontFamily="monospace" fontSize="7" fill="#4a5568">
+            CERT ID: {certId}
+          </text>
+          <text x="340" y="380" textAnchor="middle" fontFamily="monospace" fontSize="7" fill="#0f3460">
+            SHA-256 HASH: {verificationHash}
+          </text>
+          <g transform="translate(555, 377)">
+            <circle cx="0" cy="-2.5" r="2.5" fill="#16a34a" />
+            <text x="6" y="0" fontFamily="'Playfair Display', serif" fontSize="7" fontWeight="700" fill="#16a34a">
+              Genuine &amp; Verifiable
+            </text>
+          </g>
+        </>
+      )}
     </svg>
   );
 }
@@ -445,20 +522,11 @@ export function RoyalCertificateCard({
 }: RoyalCertificateCardProps) {
   void _displayName;
   const [modalOpen, setModalOpen] = useState(false);
-  const [copiedLink, setCopiedLink] = useState(false);
 
   const verificationHash = generateVerificationHash(userId);
   const certId = `SAMS-2026-${userId.slice(0, 6).toUpperCase()}`;
   const issueDate = "October 8, 2026";
   const formalName = formatRecipientName();
-
-  function copyShareLink() {
-    if (typeof window === "undefined") return;
-    const shareUrl = `${window.location.origin}/courses`;
-    navigator.clipboard.writeText(shareUrl);
-    setCopiedLink(true);
-    setTimeout(() => setCopiedLink(false), 2200);
-  }
 
   function downloadSvg() {
     if (typeof document === "undefined") return;
@@ -470,7 +538,7 @@ export function RoyalCertificateCard({
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = `SAMS_Certificate_${formalName.replace(/\s+/g, "_")}.svg`;
+    link.download = `SAMS_Example_Certificate_${formalName.replace(/\s+/g, "_")}.svg`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -479,31 +547,31 @@ export function RoyalCertificateCard({
 
   return (
     <>
-      <div className="card side-card royal-cert-container-card" aria-label="Official Certificate of Completion">
+      <div className="card side-card royal-cert-container-card" aria-label="Example Certificate of Completion">
         {/* Card Header */}
         <div className="royal-cert-card-topbar">
           <div className="royal-cert-title-group">
             <span className="royal-cert-badge-gold">
-              <Icon name="award" size={13} /> Royal Gold Credential
+              <Icon name="award" size={13} /> Example Certificate
             </span>
-            <h3 className="royal-cert-panel-title">Official Certificate</h3>
+            <h3 className="royal-cert-panel-title">Example Certificate</h3>
           </div>
           <button
             type="button"
             className="royal-expand-icon-btn"
             onClick={() => setModalOpen(true)}
-            title="Inspect in High Definition"
-            aria-label="Inspect Certificate in High Definition"
+            title="Inspect Example Certificate"
+            aria-label="Inspect Example Certificate"
           >
             <Icon name="external" size={14} />
           </button>
         </div>
 
-        {/* Small Landscape Demo Certificate (Proper Landscape Ratio ~1.58:1, ~175px tall) */}
+        {/* Small Landscape Demo Certificate */}
         <div
           className="royal-demo-cert-frame"
           onClick={() => setModalOpen(true)}
-          title="Click to view full High-Definition Certificate"
+          title="Click to view full Example Certificate"
         >
           <div className="royal-demo-cert-inner">
             <CertificateSvgDocument
@@ -511,16 +579,17 @@ export function RoyalCertificateCard({
               certId={certId}
               verificationHash={verificationHash}
               issueDate={issueDate}
+              isExample={true}
             />
           </div>
 
-          {/* Clean Hover Enlarge Hint Bar (No Dark Screen Overlay) */}
+          {/* Clean Hover Enlarge Hint Bar */}
           <div className="royal-demo-hover-bar">
-            <span>⤢ Click to inspect full HD certificate</span>
+            <span>⤢ Click to inspect Example Certificate</span>
           </div>
         </div>
 
-        {/* Card CTA Actions - Directly below certificate with zero clutter */}
+        {/* Card CTA Actions */}
         <div className="royal-cert-btn-row">
           <button
             type="button"
@@ -528,7 +597,7 @@ export function RoyalCertificateCard({
             onClick={() => setModalOpen(true)}
           >
             <Icon name="award" size={15} />
-            <span>View Full High-Definition Certificate</span>
+            <span>View Example Certificate</span>
           </button>
         </div>
       </div>
@@ -541,15 +610,15 @@ export function RoyalCertificateCard({
             onClick={(e) => e.stopPropagation()}
             role="dialog"
             aria-modal="true"
-            aria-label="High Definition Certificate Modal"
+            aria-label="Example Certificate Modal"
           >
             <div className="royal-modal-header-bar">
               <div className="royal-modal-title-area">
-                <span className="status-badge-verified">
-                  <Icon name="check" size={12} /> Tamper-Proof &amp; Verifiable Credential
+                <span className="status-badge-sample">
+                  <Icon name="award" size={12} /> Specimen Preview • Duplicate Watermarked
                 </span>
                 <h3 style={{ margin: "4px 0 0", color: "#ffffff", fontSize: "1.15rem", fontWeight: 800 }}>
-                  High-Definition Certificate of Completion
+                  Example Certificate of Completion
                 </h3>
               </div>
 
@@ -574,15 +643,6 @@ export function RoyalCertificateCard({
                 </button>
                 <button
                   type="button"
-                  className="btn btn-secondary btn-sm"
-                  onClick={copyShareLink}
-                  title="Copy verification share link"
-                >
-                  <Icon name={copiedLink ? "check" : "copy"} size={14} />
-                  <span>{copiedLink ? "Copied!" : "Share Link"}</span>
-                </button>
-                <button
-                  type="button"
                   className="royal-modal-close"
                   onClick={() => setModalOpen(false)}
                   aria-label="Close certificate modal"
@@ -600,24 +660,25 @@ export function RoyalCertificateCard({
                   certId={certId}
                   verificationHash={verificationHash}
                   issueDate={issueDate}
+                  isExample={true}
                 />
               </div>
             </div>
 
-            {/* Verification Footer Bar */}
+            {/* Modal Specimen Note & Status Footer Bar */}
             <div className="royal-modal-footer-bar">
               <div className="royal-footer-sec-item">
                 <span>RECIPIENT:</span>
                 <strong>{formalName}</strong>
               </div>
               <div className="royal-footer-sec-item">
-                <span>CERTIFICATE NUMBER:</span>
-                <code>{certId}</code>
+                <span>SPECIMEN TYPE:</span>
+                <strong style={{ color: "#f59e0b" }}>Example Certificate (Duplicate)</strong>
               </div>
               <div className="royal-footer-sec-item">
                 <span>STATUS:</span>
-                <span className="status-badge-verified" style={{ fontSize: "0.78rem", padding: "2px 8px" }}>
-                  <Icon name="check" size={10} /> Certified &amp; Tamper-Proof
+                <span className="status-badge-sample" style={{ fontSize: "0.78rem", padding: "3px 10px" }}>
+                  <Icon name="award" size={11} /> Sample Preview — Original with SHA-256 hash issued upon course completion
                 </span>
               </div>
             </div>

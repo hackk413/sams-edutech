@@ -939,6 +939,19 @@ button { cursor: pointer; }
   width: fit-content;
   margin-bottom: 2px;
 }
+.status-badge-sample {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 99px;
+  background: rgba(245, 158, 11, 0.15);
+  color: #f59e0b;
+  font-size: 0.7rem;
+  font-weight: 700;
+  width: fit-content;
+  margin-bottom: 2px;
+}
 .side-card h3 { margin: 0; font-size: 1rem; font-weight: 800; color: var(--ink); }
 .side-card p { margin: 2px 0 0; color: var(--muted); font-size: 0.78rem; overflow-wrap: anywhere; }
 .side-actions { margin-top: 16px; }

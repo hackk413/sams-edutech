@@ -285,4 +285,32 @@ test("course catalog configuration matches exact duration and pricing requiremen
   assert.ok(lmsContent.includes('case "fullstack-web-cloud-development":'));
 });
 
+test("dashboard example certificate matches professional design specifications", () => {
+  const certContent = fs.readFileSync(new URL("./components/royal-certificate-card.tsx", import.meta.url), "utf-8");
+
+  // Recipient name matches "NAME"
+  assert.ok(certContent.includes('export const DEMO_CERTIFICATE_RECIPIENT = "NAME";'));
+
+  // Title uses single professional font - no gothic/fraktur fonts
+  assert.ok(!certContent.includes("UnifrakturMaguntia"), "Should not use gothic UnifrakturMaguntia font");
+  assert.ok(!certContent.includes("MedievalSharp"), "Should not use MedievalSharp font");
+  assert.ok(certContent.includes("royal-cert-title-font"));
+
+  // Recipient uses professional typography instead of cursive script
+  assert.ok(!certContent.includes("Pinyon Script"), "Should not use Pinyon Script cursive");
+  assert.ok(certContent.includes("royal-recipient-pro"));
+
+  // Prominent DUPLICATE watermark is present for example certificates
+  assert.ok(certContent.includes("DUPLICATE"));
+  assert.ok(certContent.includes("EXAMPLE CERTIFICATE"));
+
+  // Labeled "Example Certificate"
+  assert.ok(certContent.includes("Example Certificate"));
+
+  // Security hash and genuine/verifiable label omitted from example preview
+  assert.ok(certContent.includes("isExample ?"));
+  assert.ok(certContent.includes("SPECIMEN PREVIEW"));
+});
+
+
 
