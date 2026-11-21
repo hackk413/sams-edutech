@@ -27,7 +27,9 @@ export async function createClient() {
   const rawUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
   const rawKey = (
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
+    process.env.NEXT_PUBLIC_SUPABASE_KEY ||
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLIC_KEY
   )?.trim();
 
   // If env variables are not yet configured in Hostinger, use safe placeholder
@@ -73,7 +75,11 @@ export async function createClient() {
  */
 export async function createAdminClient() {
   const rawUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
+  const serviceRoleKey = (
+    process.env.SUPABASE_SERVICE_ROLE_KEY ||
+    process.env.SUPABASE_SECRET_KEY ||
+    process.env.SUPABASE_SECRET
+  )?.trim();
 
   if (serviceRoleKey && rawUrl && rawUrl.startsWith("http")) {
     return createSupabaseClient(rawUrl, serviceRoleKey, {
