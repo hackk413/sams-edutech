@@ -44,11 +44,66 @@ export default async function DashboardPage({
   const pendingPayments = allPayments.filter(
     (p) => p.user_id === user.id && p.status === "pending_verification"
   );
+  const verifiedPayments = allPayments.filter(
+    (p) => p.user_id === user.id && p.status === "verified"
+  );
 
   const typedProfile = profile as Profile | null;
-  const typedEnrollments = (enrollments ?? []) as unknown as Enrollment[];
+  const dbEnrollments = (enrollments ?? []) as unknown as Enrollment[];
   const dbCourses = (courses ?? []) as Course[];
   const typedCourses = dbCourses.length >= 5 ? dbCourses : COURSES;
+
+  // Build a unified enrollment map combining database enrollments and admin-verified payments
+  const enrollmentMap = new Map<string, Enrollment>();
+
+  // 1. Add all direct database enrollments
+  dbEnrollments.forEach((e) => {
+    const key = e.course?.id || e.course_id;
+    if (key) enrollmentMap.set(key, e);
+  });
+
+  // 2. Ensure all admin-approved / verified payments are active enrollments
+  for (const pay of verifiedPayments) {
+    const courseObj =
+      typedCourses.find((c) => c.id === pay.course_id || c.slug === pay.course_id) ||
+      COURSES.find((c) => c.id === pay.course_id || c.slug === pay.course_id) ||
+      COURSES[0];
+
+    const cId = courseObj.id || pay.course_id;
+    if (cId && !enrollmentMap.has(cId)) {
+      const syntheticEnrollment: Enrollment = {
+        id: `enroll_${pay.id}`,
+        user_id: user.id,
+        course_id: cId,
+        progress_percent: 0,
+        last_activity_at: null,
+        enrolled_at: pay.verified_at || pay.created_at,
+        course: courseObj,
+      };
+      enrollmentMap.set(cId, syntheticEnrollment);
+
+      // Self-heal: persist enrollment in Supabase using the student's authenticated session
+      if (courseObj.id) {
+        try {
+          await supabase
+            .from("enrollments")
+            .upsert(
+              {
+                user_id: user.id,
+                course_id: courseObj.id,
+                progress_percent: 0,
+                enrolled_at: pay.verified_at || pay.created_at,
+              },
+              { onConflict: "user_id,course_id" }
+            );
+        } catch {
+          // Graceful fallback
+        }
+      }
+    }
+  }
+
+  const typedEnrollments = Array.from(enrollmentMap.values());
 
   // Build enrolled courses list and IDs
   const enrolledCourses = typedEnrollments.map((e) => {

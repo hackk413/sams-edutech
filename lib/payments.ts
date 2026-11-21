@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { createAdminClient, createClient } from "@/lib/supabase/server";
 import { logAdminAction, recordRealStudent } from "@/lib/assessments";
+import { COURSES } from "@/lib/courses";
 import type { UpiGatewayConfig, UpiPaymentRecord } from "@/lib/types";
 
 const DATA_DIR = path.join(process.cwd(), "data");
@@ -462,23 +463,48 @@ export async function verifyUpiPayment(
 
   try {
     const adminSupabase = await createAdminClient();
-    await adminSupabase.from("upi_payments").update(updated).eq("id", paymentId);
+    const { error: updateErr } = await adminSupabase.from("upi_payments").update(updated).eq("id", paymentId);
+    if (updateErr) {
+      console.warn("Could not update upi_payments table in Supabase:", updateErr);
+    }
+
+    const resolvedCourse = COURSES.find(
+      (c) => c.id === target.course_id || c.slug === target.course_id
+    );
+    const courseUuid = resolvedCourse?.id || target.course_id;
 
     if (action === "verify") {
-      // Ensure enrollment is active
-      await adminSupabase.from("enrollments").upsert({
-        user_id: target.user_id,
-        course_id: target.course_id,
-        progress_percent: 0,
-        enrolled_at: now,
-      });
+      // 1. Try security-definer RPC function (bypasses RLS)
+      try {
+        await adminSupabase.rpc("admin_confirm_enrollment", {
+          p_user_id: target.user_id,
+          p_course_identifier: target.course_id,
+        });
+      } catch {
+        // Fallback to direct upsert
+      }
+
+      // 2. Direct upsert
+      try {
+        await adminSupabase.from("enrollments").upsert(
+          {
+            user_id: target.user_id,
+            course_id: courseUuid,
+            progress_percent: 0,
+            enrolled_at: now,
+          },
+          { onConflict: "user_id,course_id" }
+        );
+      } catch (enrollErr) {
+        console.warn("Could not upsert enrollment directly to Supabase:", enrollErr);
+      }
     } else if (action === "reject") {
       // Revoke course enrollment if fake or rejected
       await adminSupabase
         .from("enrollments")
         .delete()
         .eq("user_id", target.user_id)
-        .eq("course_id", target.course_id);
+        .eq("course_id", courseUuid);
     }
   } catch (err) {
     console.warn("Could not sync verification to Supabase:", err);

@@ -27,11 +27,11 @@ create table if not exists public.courses (
   updated_at timestamptz not null default now()
 );
 
--- Ensure columns exist if table was already created in earlier versions
+-- Ensure columns and updated constraints exist if table was already created in earlier versions
 do $$
 begin
   if not exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'courses' and column_name = 'duration_months') then
-    alter table public.courses add column duration_months integer not null default 3 check (duration_months in (3, 4));
+    alter table public.courses add column duration_months integer not null default 3;
   end if;
   if not exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'courses' and column_name = 'training_plan') then
     alter table public.courses add column training_plan text not null default '3-Month Accelerator Track';
@@ -45,6 +45,12 @@ begin
   if not exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'courses' and column_name = 'discount_percent') then
     alter table public.courses add column discount_percent integer not null default 14 check (discount_percent between 0 and 100);
   end if;
+
+  -- Ensure check constraints allow all colors and durations
+  alter table public.courses drop constraint if exists courses_accent_check;
+  alter table public.courses add constraint courses_accent_check check (accent in ('blue', 'orange', 'dark', 'green', 'purple', 'teal'));
+  alter table public.courses drop constraint if exists courses_duration_months_check;
+  alter table public.courses add constraint courses_duration_months_check check (duration_months in (3, 4));
 end $$;
 
 -- ── 2. DYNAMIC COURSE PRICING OVERRIDE TABLE ──
@@ -67,12 +73,20 @@ create table if not exists public.profiles (
   avatar_url text,
   bio text,
   created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now(),
-  constraint profiles_full_name_length check (full_name is null or char_length(full_name) between 2 and 80),
-  constraint profiles_username_format check (username is null or username ~ '^[A-Za-z0-9_.-]{3,30}$'),
-  constraint profiles_phone_format check (phone_number is null or phone_number ~ '^(\+91[\s\-]?)?[6-9]\d{9}$'),
-  constraint profiles_bio_length check (bio is null or char_length(bio) <= 400)
+  updated_at timestamptz not null default now()
 );
+
+-- Safely drop legacy over-restrictive check constraints on profiles if they exist
+alter table public.profiles drop constraint if exists profiles_full_name_length;
+alter table public.profiles drop constraint if exists profiles_username_format;
+alter table public.profiles drop constraint if exists profiles_phone_format;
+alter table public.profiles drop constraint if exists profiles_bio_length;
+
+-- Add relaxed, safe constraints
+alter table public.profiles add constraint profiles_full_name_length 
+  check (full_name is null or char_length(full_name) <= 120);
+alter table public.profiles add constraint profiles_bio_length 
+  check (bio is null or char_length(bio) <= 1000);
 
 -- Ensure profile columns exist if table was already created in earlier migrations
 do $$
@@ -197,14 +211,29 @@ language plpgsql
 security definer
 set search_path = public
 as $$
+declare
+  raw_name text;
+  raw_email text;
+  raw_phone text;
+  raw_avatar text;
 begin
+  raw_name := nullif(trim(new.raw_user_meta_data ->> 'full_name'), '');
+  raw_email := nullif(trim(new.email), '');
+  raw_phone := nullif(trim(new.raw_user_meta_data ->> 'phone_number'), '');
+  raw_avatar := nullif(trim(new.raw_user_meta_data ->> 'avatar_url'), '');
+
+  -- Default fallback if name is empty or less than 2 chars
+  if raw_name is null or length(raw_name) < 2 then
+    raw_name := split_part(coalesce(raw_email, 'Student'), '@', 1);
+  end if;
+
   insert into public.profiles (id, full_name, email, phone_number, avatar_url)
   values (
     new.id,
-    nullif(trim(new.raw_user_meta_data ->> 'full_name'), ''),
-    nullif(trim(new.email), ''),
-    nullif(trim(new.raw_user_meta_data ->> 'phone_number'), ''),
-    nullif(trim(new.raw_user_meta_data ->> 'avatar_url'), '')
+    substring(raw_name from 1 for 80),
+    raw_email,
+    raw_phone,
+    raw_avatar
   )
   on conflict (id) do update set
     full_name = coalesce(excluded.full_name, profiles.full_name),
@@ -212,6 +241,11 @@ begin
     phone_number = coalesce(excluded.phone_number, profiles.phone_number),
     avatar_url = coalesce(excluded.avatar_url, profiles.avatar_url),
     updated_at = now();
+
+  return new;
+exception when others then
+  -- Fail-safe: Never abort the auth.users signup transaction
+  raise warning 'Auto profile creation notice in handle_new_user: %', sqlerrm;
   return new;
 end;
 $$;
@@ -221,7 +255,8 @@ create trigger on_auth_user_created
 after insert on auth.users
 for each row execute function public.handle_new_user();
 
-revoke all on function public.handle_new_user() from public, anon, authenticated;
+-- Ensure execution permissions for the auth process
+grant execute on function public.handle_new_user() to postgres, anon, authenticated, service_role;
 
 create or replace function public.touch_profile_updated_at()
 returns trigger
@@ -262,8 +297,8 @@ revoke all on table public.upi_settings from anon, authenticated;
 -- Grant minimal safe access
 grant select on table public.courses to anon, authenticated;
 grant select on table public.course_pricing to anon, authenticated;
-grant select, update on table public.profiles to authenticated;
-grant select, insert on table public.enrollments to authenticated;
+grant select, insert, update on table public.profiles to authenticated;
+grant select, insert, update on table public.enrollments to authenticated;
 grant select on table public.weekly_assessments to anon, authenticated;
 grant select, insert, update on table public.assessment_submissions to authenticated;
 grant select on table public.upi_settings to anon, authenticated;
@@ -297,6 +332,12 @@ to authenticated
 using ((select auth.uid()) = id)
 with check ((select auth.uid()) = id);
 
+drop policy if exists "students_can_insert_own_profile" on public.profiles;
+create policy "students_can_insert_own_profile"
+on public.profiles for insert
+to authenticated
+with check ((select auth.uid()) = id);
+
 -- Enrollments RLS
 drop policy if exists "students_can_view_own_enrollments" on public.enrollments;
 create policy "students_can_view_own_enrollments"
@@ -308,6 +349,13 @@ drop policy if exists "students_can_create_own_enrollments" on public.enrollment
 create policy "students_can_create_own_enrollments"
 on public.enrollments for insert
 to authenticated
+with check ((select auth.uid()) = user_id);
+
+drop policy if exists "students_can_update_own_enrollments" on public.enrollments;
+create policy "students_can_update_own_enrollments"
+on public.enrollments for update
+to authenticated
+using ((select auth.uid()) = user_id)
 with check ((select auth.uid()) = user_id);
 
 -- Weekly Assessments RLS
@@ -722,3 +770,65 @@ on conflict (id) do update set
   status = excluded.status,
   starter_repo_url = excluded.starter_repo_url,
   updated_at = now();
+
+-- ── 13. AUTO-SYNC & BACKFILL EXISTING AUTH USERS TO PROFILES ──
+insert into public.profiles (id, full_name, email, phone_number, avatar_url)
+select 
+  u.id,
+  coalesce(nullif(trim(u.raw_user_meta_data ->> 'full_name'), ''), split_part(coalesce(u.email, 'Student'), '@', 1)),
+  u.email,
+  nullif(trim(u.raw_user_meta_data ->> 'phone_number'), ''),
+  nullif(trim(u.raw_user_meta_data ->> 'avatar_url'), '')
+from auth.users u
+on conflict (id) do update set
+  email = coalesce(excluded.email, profiles.email),
+  full_name = coalesce(excluded.full_name, profiles.full_name),
+  updated_at = now();
+
+-- ── 14. ADMIN CONFIRM ENROLLMENT RPC (Security Definer) ──
+create or replace function public.admin_confirm_enrollment(
+  p_user_id uuid,
+  p_course_identifier text
+)
+returns boolean
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_course_id uuid;
+begin
+  if p_course_identifier ~ '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$' then
+    select id into v_course_id from public.courses where id = p_course_identifier::uuid limit 1;
+  else
+    select id into v_course_id from public.courses where slug = p_course_identifier limit 1;
+  end if;
+
+  if v_course_id is not null then
+    insert into public.enrollments (user_id, course_id, progress_percent, enrolled_at)
+    values (p_user_id, v_course_id, 0, now())
+    on conflict (user_id, course_id) do nothing;
+    return true;
+  end if;
+
+  return false;
+end;
+$$;
+
+grant execute on function public.admin_confirm_enrollment(uuid, text) to postgres, anon, authenticated, service_role;
+
+-- ── 15. AUTO-ENROLL ALL STUDENTS WITH EXISTING VERIFIED PAYMENTS ──
+insert into public.enrollments (user_id, course_id, progress_percent, enrolled_at)
+select 
+  p.user_id,
+  case 
+    when p.course_id ~ '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$' then p.course_id::uuid
+    else c.id
+  end as course_id,
+  0 as progress_percent,
+  coalesce(p.verified_at, p.created_at, now()) as enrolled_at
+from public.upi_payments p
+left join public.courses c on c.slug = p.course_id
+where p.status = 'verified'
+  and (p.course_id ~ '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$' or c.id is not null)
+on conflict (user_id, course_id) do nothing;

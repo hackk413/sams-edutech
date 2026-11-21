@@ -5,6 +5,7 @@ import { Icon } from "@/components/icon";
 import { getCourseSyllabus } from "@/lib/lms";
 import { COURSES, getCourseBySlug } from "@/lib/courses";
 import { getCoursePriceConfig } from "@/lib/courses-server";
+import { getUpiPayments } from "@/lib/payments";
 import type { Course } from "@/lib/types";
 
 export function generateStaticParams() {
@@ -35,6 +36,17 @@ export default async function CourseDetailPage({ params }: { params: Promise<{ s
         .eq("course_id", courseId)
         .maybeSingle();
       enrolled = Boolean(enrollment);
+
+      // Also check verified payment records
+      if (!enrolled) {
+        const payments = await getUpiPayments();
+        enrolled = payments.some(
+          (p) =>
+            p.user_id === user!.id &&
+            (p.course_id === courseId || p.course_id === slug) &&
+            p.status === "verified"
+        );
+      }
     }
   } catch (err: unknown) {
     if (

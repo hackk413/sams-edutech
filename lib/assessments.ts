@@ -1102,11 +1102,12 @@ export async function getStudentProfilesAdmin(): Promise<StudentProfileAdminView
       }
     }
 
-    // 3. Query profiles, enrollments, courses
-    const [{ data: profiles }, { data: enrollments }, { data: courses }] = await Promise.all([
+    // 3. Query profiles, enrollments, courses, and verified upi payments
+    const [{ data: profiles }, { data: enrollments }, { data: courses }, { data: upiPayments }] = await Promise.all([
       adminSupabase.from("profiles").select("*"),
       adminSupabase.from("enrollments").select("*, course:courses(*)"),
       adminSupabase.from("courses").select("*"),
+      adminSupabase.from("upi_payments").select("*"),
     ]);
 
     const coursesMap = new Map<string, string>(COURSES.map((c) => [c.id, c.title]));
@@ -1119,6 +1120,31 @@ export async function getStudentProfilesAdmin(): Promise<StudentProfileAdminView
     // Helper to calculate student statistics
     function calcStats(uid: string) {
       const userEnrollments = (enrollments || []).filter((e: { user_id: string }) => e.user_id === uid);
+      const userPayments = (upiPayments || []).filter(
+        (p: { user_id: string; status: string }) => p.user_id === uid && p.status === "verified"
+      );
+
+      // Merge verified payments into enrolled courses list
+      const courseIdSet = new Set(userEnrollments.map((e: { course_id: string }) => e.course_id));
+      const enrolledCoursesList = userEnrollments.map((e: { course_id: string; progress_percent: number }) => ({
+        id: e.course_id,
+        title: coursesMap.get(e.course_id) || "Enrolled Program",
+        progress: Math.round(Number(e.progress_percent || 0)),
+      }));
+
+      for (const vp of userPayments) {
+        const resolvedCourse = COURSES.find((c) => c.id === vp.course_id || c.slug === vp.course_id);
+        const resolvedId = resolvedCourse?.id || vp.course_id;
+        if (!courseIdSet.has(resolvedId)) {
+          courseIdSet.add(resolvedId);
+          enrolledCoursesList.push({
+            id: resolvedId,
+            title: resolvedCourse?.title || vp.course_title || "Enrolled Program",
+            progress: 0,
+          });
+        }
+      }
+
       const userSubmissions = submissions.filter((s) => s.user_id === uid);
       const graded = userSubmissions.filter((s) => typeof s.score === "number");
       const avgScore =
@@ -1127,12 +1153,8 @@ export async function getStudentProfilesAdmin(): Promise<StudentProfileAdminView
           : null;
 
       return {
-        enrollments_count: userEnrollments.length,
-        enrolled_courses: userEnrollments.map((e: { course_id: string; progress_percent: number }) => ({
-          id: e.course_id,
-          title: coursesMap.get(e.course_id) || "Enrolled Program",
-          progress: Math.round(Number(e.progress_percent || 0)),
-        })),
+        enrollments_count: enrolledCoursesList.length,
+        enrolled_courses: enrolledCoursesList,
         submissions_count: userSubmissions.length,
         graded_count: graded.length,
         average_score: avgScore,
