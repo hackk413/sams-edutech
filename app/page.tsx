@@ -6,10 +6,25 @@ import { COURSES } from "@/lib/courses";
 import type { Course } from "@/lib/types";
 
 export default async function HomePage() {
-  const supabase = await createClient();
-  const { data } = await supabase.from("courses").select("*").order("created_at", { ascending: true });
-  const dbCourses = (data ?? []) as Course[];
-  const courses = dbCourses.length >= 5 ? dbCourses : COURSES;
+  let courses: Course[] = COURSES;
+  try {
+    const supabase = await createClient();
+    const { data } = await supabase.from("courses").select("*").order("created_at", { ascending: true });
+    const dbCourses = (data ?? []) as Course[];
+    if (dbCourses.length >= 5) {
+      courses = dbCourses;
+    }
+  } catch (err: unknown) {
+    if (
+      err &&
+      typeof err === "object" &&
+      "digest" in err &&
+      (err as { digest?: string }).digest === "DYNAMIC_SERVER_USAGE"
+    ) {
+      throw err;
+    }
+    console.warn("Could not query courses from Supabase, using local catalog:", err);
+  }
   const featured = courses[0];
 
   return (

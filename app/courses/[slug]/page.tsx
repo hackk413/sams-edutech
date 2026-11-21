@@ -13,11 +13,40 @@ export function generateStaticParams() {
 
 export default async function CourseDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const supabase = await createClient();
-  const [{ data: course }, { data: { user } }] = await Promise.all([
-    supabase.from("courses").select("*").eq("slug", slug).maybeSingle(),
-    supabase.auth.getUser(),
-  ]);
+  let course: Course | null = null;
+  let user: { id: string } | null = null;
+  let enrolled = false;
+
+  try {
+    const supabase = await createClient();
+    const [{ data: dbCourse }, { data: authData }] = await Promise.all([
+      supabase.from("courses").select("*").eq("slug", slug).maybeSingle(),
+      supabase.auth.getUser(),
+    ]);
+    course = (dbCourse as Course) ?? null;
+    user = authData?.user ?? null;
+
+    if (user && (course?.id || getCourseBySlug(slug)?.id)) {
+      const courseId = course?.id || getCourseBySlug(slug)!.id;
+      const { data: enrollment } = await supabase
+        .from("enrollments")
+        .select("id")
+        .eq("user_id", user.id)
+        .eq("course_id", courseId)
+        .maybeSingle();
+      enrolled = Boolean(enrollment);
+    }
+  } catch (err: unknown) {
+    if (
+      err &&
+      typeof err === "object" &&
+      "digest" in err &&
+      (err as { digest?: string }).digest === "DYNAMIC_SERVER_USAGE"
+    ) {
+      throw err;
+    }
+    console.warn("Could not query course from Supabase:", err);
+  }
 
   const fallbackCourse = getCourseBySlug(slug);
   const typedCourse = (course ? { ...fallbackCourse, ...(course as Course) } : fallbackCourse) as Course | undefined;
@@ -44,17 +73,6 @@ export default async function CourseDetailPage({ params }: { params: Promise<{ s
     discount_percent: pricingConfig.discount_percent,
   };
   const syllabus = getCourseSyllabus(typedCourse.slug);
-
-  let enrolled = false;
-  if (user) {
-    const { data } = await supabase
-      .from("enrollments")
-      .select("id")
-      .eq("user_id", user.id)
-      .eq("course_id", typedCourse.id)
-      .maybeSingle();
-    enrolled = Boolean(data);
-  }
 
   return (
     <>

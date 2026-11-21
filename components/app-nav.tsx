@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { User } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import { LogoutButton } from "@/components/logout-button";
 import { Icon } from "@/components/icon";
@@ -8,8 +9,22 @@ import { UserAvatar } from "@/components/user-avatar";
 import { BrandLogo } from "@/components/brand-logo";
 
 export async function AppNav() {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  let user: User | null = null;
+  try {
+    const supabase = await createClient();
+    const { data } = await supabase.auth.getUser();
+    user = data?.user ?? null;
+  } catch (err: unknown) {
+    if (
+      err &&
+      typeof err === "object" &&
+      "digest" in err &&
+      (err as { digest?: string }).digest === "DYNAMIC_SERVER_USAGE"
+    ) {
+      throw err;
+    }
+    console.warn("Could not retrieve user session in AppNav:", err);
+  }
   const name = (user?.user_metadata?.full_name as string | undefined) || user?.email || "Student";
   const avatarUrl = (user?.user_metadata?.avatar_url as string | undefined) || null;
 
