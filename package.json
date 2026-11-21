@@ -15,6 +15,7 @@
     "node": ">=20.9.0"
   },
   "dependencies": {
+    "@next/swc-wasm-nodejs": "16.3.8",
     "@supabase/ssr": "^0.12.7",
     "@supabase/supabase-js": "^2.117.2",
     "next": "16.3.8",
