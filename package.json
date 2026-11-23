@@ -15,7 +15,7 @@
     "node": ">=20.9.0"
   },
   "dependencies": {
-    "@next/swc-wasm-nodejs": "16.3.8",
+    "@next/swc-wasm-nodejs": "16.4.5",
     "@supabase/ssr": "^0.12.7",
     "@supabase/supabase-js": "^2.117.2",
     "next": "16.4.5",
@@ -27,7 +27,13 @@
     "@types/react": "19.1.11",
     "@types/react-dom": "19.1.9",
     "eslint": "9.39.0",
-    "eslint-config-next": "16.3.8",
+    "eslint-config-next": "16.4.5",
     "typescript": "5.9.3"
+  },
+  "overrides": {
+    "zod": "^4.6.6",
+    "@typescript-eslint/typescript-estree": {
+      "minimatch": "^11.0.1"
+    }
   }
 }

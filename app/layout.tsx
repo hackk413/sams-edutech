@@ -78,7 +78,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
                 </span>
               </div>
               <div className="footer-bottom-row">
-                <div>&copy; {new Date().getFullYear()} SAMS EDUTECH SOLUTIONS PRIVATE LIMITED. All rights reserved.</div>
+                <div>&copy; {new Date().getFullYear()} SAMS EDUTECH LLC. All rights reserved.</div>
                 <div className="footer-links">
                   <span>Self-Paced Learning</span>
                   <span>Verified Certifications</span>
