@@ -3,6 +3,7 @@ import path from "node:path";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { encryptSensitiveText, decryptSensitiveText } from "@/lib/crypto";
 import { COURSES } from "@/lib/courses";
+import { ensureAssessmentQuestions } from "@/lib/mcq-bank";
 import type {
   WeeklyAssessment,
   AssessmentSubmission,
@@ -777,6 +778,25 @@ export async function getWeeklyAssessments(
     list = list.filter((a) => allowed.has(a.course_id) || allowed.has(a.slug));
   }
 
+  // Ensure all assessments have 20 multiple choice questions
+  list = list.map((a) => {
+    const questions = ensureAssessmentQuestions(
+      a.id,
+      a.course_id,
+      a.week_number,
+      a.course_title,
+      a.questions
+    );
+    return {
+      ...a,
+      questions,
+      total_questions: 20,
+      duration_minutes: a.duration_minutes || 30,
+      max_points: 100,
+      passing_points: a.passing_points || 70,
+    };
+  });
+
   return list.sort((a, b) => a.week_number - b.week_number);
 }
 
@@ -901,26 +921,48 @@ export async function getSubmissions(userId?: string, assessmentId?: string): Pr
   });
 }
 
-export async function submitAssessment(submission: Omit<AssessmentSubmission, "id" | "submitted_at" | "updated_at" | "status">): Promise<AssessmentSubmission> {
+export async function submitAssessment(submission: {
+  assessment_id: string;
+  user_id: string;
+  student_name: string;
+  student_email: string;
+  answers?: Record<string, number>;
+  notes?: string | null;
+  github_url?: string | null;
+  demo_url?: string | null;
+  submission_content?: string | null;
+}): Promise<AssessmentSubmission> {
   const now = new Date().toISOString();
   const current = loadJsonFile<AssessmentSubmission[]>(SUBMISSIONS_FILE, []);
 
-  // ── INSTANT MARKS ENGINE: Evaluate and grade immediately on submission ──
-  const assessments = loadJsonFile<WeeklyAssessment[]>(ASSESSMENTS_FILE, INITIAL_ASSESSMENTS);
+  // ── AUTOMATED 20-QUESTION MCQ EVALUATION ENGINE ──
+  const assessments = await getWeeklyAssessments(false);
   const parentAssessment = assessments.find((a) => a.id === submission.assessment_id);
-  const maxPts = parentAssessment?.max_points || 100;
-  
-  // Calculate automated score based on deliverables completeness
-  let autoScore = Math.round(maxPts * 0.90); // 90% base for verified repo submission
-  if (submission.demo_url && submission.demo_url.trim().length > 5) {
-    autoScore += Math.round(maxPts * 0.05); // +5% for live interactive demo
+  const questions = parentAssessment?.questions || [];
+  const totalQuestions = questions.length > 0 ? questions.length : 20;
+
+  const rawAnswers = submission.answers || {};
+  let correctCount = 0;
+
+  for (const q of questions) {
+    const studentChoice = rawAnswers[q.id] ?? rawAnswers[String(q.id)];
+    if (studentChoice !== undefined && Number(studentChoice) === q.correct_answer) {
+      correctCount++;
+    }
   }
-  if (submission.notes && submission.notes.trim().length > 30) {
-    autoScore += Math.round(maxPts * 0.03); // +3% for comprehensive methodology notes
-  }
-  autoScore = Math.min(maxPts, Math.max(parentAssessment?.passing_points || 60, autoScore));
-  const autoGrade = autoScore >= Math.round(maxPts * 0.90) ? "A+" : "A";
-  const autoFeedback = `Automated Evaluation Engine: Submission repository verified. Primary weekly deliverables, code structure, and objective requirements validated successfully. Score: ${autoScore}/${maxPts} (${autoGrade}).`;
+
+  // Calculate percentage score (0..100)
+  const score = Math.round((correctCount / totalQuestions) * 100);
+  const isPassed = score >= (parentAssessment?.passing_points || 70);
+
+  let grade = "C";
+  if (score >= 90) grade = "A+";
+  else if (score >= 80) grade = "A";
+  else if (score >= 70) grade = "B";
+  else if (score >= 60) grade = "C";
+  else grade = "Needs Revision";
+
+  const autoFeedback = `20-Question MCQ Knowledge Assessment: ${correctCount}/${totalQuestions} correct (${score}%). ${isPassed ? "PASSED! Core knowledge benchmarks achieved." : "Did not meet passing score (70%). Review questions and retake when ready."}`;
   const encryptedFeedback = encryptSensitiveText(autoFeedback);
 
   // Check if submission already exists for this user and assessment
@@ -935,29 +977,41 @@ export async function submitAssessment(submission: Omit<AssessmentSubmission, "i
     record = {
       ...current[existingIndex],
       ...submission,
-      score: autoScore,
-      grade: autoGrade,
+      answers: rawAnswers,
+      correct_count: correctCount,
+      total_questions: totalQuestions,
+      score,
+      grade,
       feedback: autoFeedback,
       feedback_encrypted: encryptedFeedback,
-      status: "graded",
-      graded_by: "Automated Evaluation Engine",
-      graded_at: now,
-      updated_at: now,
+      github_url: submission.github_url || "mcq-assessment-evaluation",
+      demo_url: submission.demo_url || null,
+      submission_content: submission.submission_content || null,
     };
     current[existingIndex] = record;
   } else {
     record = {
-      ...submission,
       id: `sub-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-      score: autoScore,
-      grade: autoGrade,
+      assessment_id: submission.assessment_id,
+      user_id: submission.user_id,
+      student_name: submission.student_name,
+      student_email: submission.student_email,
+      answers: rawAnswers,
+      correct_count: correctCount,
+      total_questions: totalQuestions,
+      score,
+      grade,
       feedback: autoFeedback,
       feedback_encrypted: encryptedFeedback,
       status: "graded",
-      graded_by: "Automated Evaluation Engine",
+      graded_by: "MCQ Auto-Evaluation Engine",
       graded_at: now,
       submitted_at: now,
       updated_at: now,
+      notes: submission.notes || null,
+      github_url: submission.github_url || "mcq-assessment-evaluation",
+      demo_url: submission.demo_url || null,
+      submission_content: submission.submission_content || null,
     };
     current.unshift(record);
   }

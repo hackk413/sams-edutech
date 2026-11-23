@@ -7,6 +7,7 @@ import {
   updateWeeklyAssessment,
   deleteWeeklyAssessment,
 } from "@/lib/assessments";
+import { generate20McqsForTrack } from "@/lib/mcq-bank";
 
 async function isAuthorizedAdmin(): Promise<boolean> {
   const cookieStore = await cookies();
@@ -34,17 +35,20 @@ export async function POST(request: NextRequest) {
       slug,
       description,
       objectives,
-      deliverables,
+      questions,
       due_date,
       max_points,
       passing_points,
       difficulty,
-      starter_repo_url,
     } = body;
 
     if (!title || !description || !due_date) {
       return NextResponse.json({ error: "Missing required assessment fields" }, { status: 400 });
     }
+
+    const effectiveQuestions = Array.isArray(questions) && questions.length === 20
+      ? questions
+      : generate20McqsForTrack(course_id || "general", Number(week_number) || 1, course_title || "Universal Cohort Track");
 
     const created = await createWeeklyAssessment({
       week_number: Number(week_number) || 1,
@@ -54,13 +58,14 @@ export async function POST(request: NextRequest) {
       slug: slug || title.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
       description: description.trim(),
       objectives: Array.isArray(objectives) ? objectives : [],
-      deliverables: Array.isArray(deliverables) ? deliverables : [],
+      questions: effectiveQuestions,
+      total_questions: 20,
+      duration_minutes: Number(body.duration_minutes) || 30,
       due_date: new Date(due_date).toISOString(),
       max_points: Number(max_points) || 100,
-      passing_points: Number(passing_points) || 60,
+      passing_points: Number(passing_points) || 70,
       difficulty: difficulty || "Intermediate",
       status: "published",
-      starter_repo_url: starter_repo_url?.trim() || null,
     });
 
     return NextResponse.json({ success: true, assessment: created }, { status: 201 });

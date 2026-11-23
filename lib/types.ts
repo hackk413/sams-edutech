@@ -55,6 +55,14 @@ export type Enrollment = {
   course: Course;
 };
 
+export type McqQuestion = {
+  id: number;
+  question: string;
+  options: string[];
+  correct_answer: number; // 0, 1, 2, or 3
+  explanation?: string;
+};
+
 export type WeeklyAssessment = {
   id: string;
   week_number: number;
@@ -64,12 +72,15 @@ export type WeeklyAssessment = {
   slug: string;
   description: string;
   objectives: string[];
-  deliverables: string[];
+  questions?: McqQuestion[];
+  total_questions?: number; // Always 20 MCQs
+  duration_minutes?: number; // 30 minutes
   due_date: string; // ISO 8601 string
   max_points: number;
   passing_points: number;
   difficulty: "Beginner" | "Intermediate" | "Advanced";
   status: "published" | "draft" | "closed";
+  deliverables?: string[];
   starter_repo_url?: string | null;
   created_at: string;
   updated_at: string;
@@ -81,19 +92,22 @@ export type AssessmentSubmission = {
   user_id: string;
   student_name: string;
   student_email: string;
-  github_url: string;
-  demo_url?: string | null;
-  notes?: string | null;
-  submission_content?: string | null;
+  answers: Record<string, number>; // Question ID -> Selected option index (0..3)
+  correct_count: number;
+  total_questions: number;
+  score: number; // Percentage 0..100
+  grade: string; // e.g. "A+", "A", "B", "Pass", "Needs Revision"
   status: "submitted" | "under_review" | "graded" | "needs_revision";
-  score?: number | null; // 0 to max_points
-  grade?: string | null; // e.g. "A+", "A", "B", "Pass"
   feedback?: string | null;
   feedback_encrypted?: string | null;
   graded_by?: string | null;
   graded_at?: string | null;
   submitted_at: string;
   updated_at: string;
+  notes?: string | null;
+  github_url?: string | null;
+  demo_url?: string | null;
+  submission_content?: string | null;
 };
 
 export type StudentProfileAdminView = {

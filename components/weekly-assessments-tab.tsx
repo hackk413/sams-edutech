@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Icon } from "@/components/icon";
 import { displayDate, formatTimeRemaining } from "@/lib/utils";
-import type { WeeklyAssessment, AssessmentSubmission } from "@/lib/types";
+import type { WeeklyAssessment, AssessmentSubmission, McqQuestion } from "@/lib/types";
 
 interface EnrolledCourseSummary {
   id: string;
@@ -34,17 +34,23 @@ export function WeeklyAssessmentsTab({
   const router = useRouter();
   const [selectedWeek, setSelectedWeek] = useState<number | "all">("all");
   const [selectedCourse, setSelectedCourse] = useState<string>("all");
-  const [submittingAssessment, setSubmittingAssessment] = useState<WeeklyAssessment | null>(null);
 
-  // Form states
-  const [githubUrl, setGithubUrl] = useState("");
-  const [demoUrl, setDemoUrl] = useState("");
-  const [notes, setNotes] = useState("");
+  // Active MCQ Modal states
+  const [activeAssessment, setActiveAssessment] = useState<WeeklyAssessment | null>(null);
+  const [modalMode, setModalMode] = useState<"take" | "review">("take");
+  const [currentQIndex, setCurrentQIndex] = useState(0);
+  const [answers, setAnswers] = useState<Record<string, number>>({});
   const [submitting, setSubmitting] = useState(false);
-  const [formError, setFormError] = useState("");
-  const [formSuccess, setFormSuccess] = useState("");
+  const [errorMsg, setErrorMsg] = useState("");
+  const [submissionSuccess, setSubmissionSuccess] = useState<{
+    score: number;
+    correctCount: number;
+    total: number;
+    grade: string;
+    passed: boolean;
+  } | null>(null);
 
-  // Zero enrollment condition: Student has not enrolled in any program yet
+  // Zero enrollment condition
   const hasEnrollments = enrolledCourses.length > 0;
 
   // Map submissions by assessment_id
@@ -69,36 +75,66 @@ export function WeeklyAssessmentsTab({
 
   // Compute metrics
   const total = assessments.length;
-  const submittedCount = submissions.filter((s) => assessments.some((a) => a.id === s.assessment_id)).length;
-  const gradedList = submissions.filter(
-    (s) => s.status === "graded" && typeof s.score === "number" && assessments.some((a) => a.id === s.assessment_id)
+  const submittedList = submissions.filter((s) => assessments.some((a) => a.id === s.assessment_id));
+  const submittedCount = submittedList.length;
+  const gradedList = submittedList.filter(
+    (s) => s.status === "graded" && typeof s.score === "number"
   );
   const gradedCount = gradedList.length;
   const totalScoreEarned = gradedList.reduce((sum, s) => sum + (s.score || 0), 0);
-  const totalPossible = gradedList.reduce((sum, s) => {
-    const parent = assessments.find((a) => a.id === s.assessment_id);
-    return sum + (parent?.max_points || 100);
-  }, 0);
-  const scorePercent = totalPossible > 0 ? Math.round((totalScoreEarned / totalPossible) * 100) : 0;
+  const scorePercent = gradedCount > 0 ? Math.round(totalScoreEarned / gradedCount) : 0;
 
-  function openSubmitModal(assessment: WeeklyAssessment) {
+  function openTakeModal(assessment: WeeklyAssessment) {
     const existing = submissionMap.get(assessment.id);
-    setSubmittingAssessment(assessment);
-    setGithubUrl(existing?.github_url || "");
-    setDemoUrl(existing?.demo_url || "");
-    setNotes(existing?.notes || "");
-    setFormError("");
-    setFormSuccess("");
+    setActiveAssessment(assessment);
+    setModalMode("take");
+    setCurrentQIndex(0);
+    setErrorMsg("");
+    setSubmissionSuccess(null);
+
+    // If previously submitted, pre-populate answers for retake or start fresh
+    if (existing?.answers && typeof existing.answers === "object") {
+      setAnswers({ ...existing.answers });
+    } else {
+      setAnswers({});
+    }
   }
 
-  async function handleSubmission(e: React.FormEvent) {
-    e.preventDefault();
-    if (!submittingAssessment) return;
-    setFormError("");
-    setFormSuccess("");
+  function openReviewModal(assessment: WeeklyAssessment) {
+    const existing = submissionMap.get(assessment.id);
+    setActiveAssessment(assessment);
+    setModalMode("review");
+    setCurrentQIndex(0);
+    setErrorMsg("");
+    setSubmissionSuccess(null);
+    if (existing?.answers && typeof existing.answers === "object") {
+      setAnswers({ ...existing.answers });
+    } else {
+      setAnswers({});
+    }
+  }
 
-    if (!githubUrl.trim().startsWith("http")) {
-      return setFormError("Please enter a valid HTTP/HTTPS URL for your GitHub repository or solution.");
+  function handleSelectOption(questionId: number, optionIndex: number) {
+    if (modalMode === "review") return; // Read-only in review mode
+    setAnswers((prev) => ({
+      ...prev,
+      [questionId.toString()]: optionIndex,
+    }));
+  }
+
+  async function handleSubmitAssessment() {
+    if (!activeAssessment) return;
+    setErrorMsg("");
+
+    const questions: McqQuestion[] = activeAssessment.questions || [];
+    const totalQ = questions.length || 20;
+    const answeredCount = Object.keys(answers).length;
+
+    if (answeredCount < totalQ) {
+      const confirmIncomplete = window.confirm(
+        `You have answered ${answeredCount} of ${totalQ} questions. Unanswered questions will be marked as incorrect. Are you sure you want to submit now?`
+      );
+      if (!confirmIncomplete) return;
     }
 
     setSubmitting(true);
@@ -107,35 +143,42 @@ export function WeeklyAssessmentsTab({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          assessment_id: submittingAssessment.id,
+          assessment_id: activeAssessment.id,
           user_id: studentId,
           student_name: studentName,
           student_email: studentEmail,
-          github_url: githubUrl.trim(),
-          demo_url: demoUrl.trim() || null,
-          notes: notes.trim() || null,
+          answers,
+          notes: `Completed 20-Question MCQ Assessment with ${answeredCount} answered questions.`,
         }),
       });
 
       const data = await res.json();
       if (!res.ok) {
-        throw new Error(data.error || "Failed to submit assignment.");
+        throw new Error(data.error || "Failed to submit assessment.");
       }
 
-      setFormSuccess("Assignment submitted successfully! Our mentors will review your code.");
-      setTimeout(() => {
-        setSubmittingAssessment(null);
-        router.refresh();
-      }, 1200);
+      const returnedSubmission: AssessmentSubmission = data.submission;
+      const score = returnedSubmission.score ?? 0;
+      const correctCount = returnedSubmission.correct_count ?? Math.round((score / 100) * totalQ);
+      const passed = score >= (activeAssessment.passing_points || 70);
+
+      setSubmissionSuccess({
+        score,
+        correctCount,
+        total: totalQ,
+        grade: returnedSubmission.grade || (passed ? "Pass" : "Needs Revision"),
+        passed,
+      });
+
+      router.refresh();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Submission failed. Please try again.";
-      setFormError(msg);
+      setErrorMsg(msg);
     } finally {
       setSubmitting(false);
     }
   }
 
-  // Weeks list for pill filter
   const availableWeeks = Array.from(new Set(courseFiltered.map((a) => a.week_number))).sort((a, b) => a - b);
 
   // If user is not enrolled in any course: Show course enrollment guidance
@@ -147,10 +190,10 @@ export function WeeklyAssessmentsTab({
             <Icon name="lock" size={26} />
           </div>
           <h2 className="zero-enrollment-title">
-            Weekly Assignments &amp; Marks are Course-Specific
+            Weekly 20-Question MCQ Assessments are Course-Specific
           </h2>
           <p className="zero-enrollment-desc">
-            Weekly practical engineering deliverables, hands-on labs, and instructor evaluations are tailored specifically to your enrolled track. Enroll in one of our 5 specialized career tracks to unlock your cohort curriculum and start earning verified marks.
+            Weekly multiple choice knowledge assessments are tailored specifically to your enrolled cohort track. Enroll in one of our specialized career tracks to unlock your 20-question weekly assessments, test your knowledge, and earn certified grades.
           </p>
           <div className="zero-enrollment-actions">
             <Link href="/courses" className="btn btn-orange zero-enrollment-btn">
@@ -161,11 +204,11 @@ export function WeeklyAssessmentsTab({
 
           <div className="enrollment-motivation-card">
             <p className="enrollment-callout-text">
-              ✨ Take the first step toward your tech career — <strong>enroll in an active specialization today</strong> to unlock hands-on weekly assignments, personal code reviews, and verifiable marks!
+              ✨ Take the first step toward your tech career — <strong>enroll in an active specialization today</strong> to unlock weekly 20-question MCQ knowledge assessments, automated evaluations, and verified marks!
             </p>
             <div className="enrollment-quote-box">
               <blockquote className="enrollment-quote">
-                “The expert in anything was once a beginner. The secret to getting ahead is getting started, building consistently, and never stopping the curiosity to learn.”
+                “The expert in anything was once a beginner. The secret to getting ahead is getting started, testing your knowledge consistently, and never stopping the curiosity to learn.”
               </blockquote>
               <span className="enrollment-quote-author">— Sams Edutech Mentorship</span>
             </div>
@@ -175,6 +218,11 @@ export function WeeklyAssessmentsTab({
     );
   }
 
+  // Active question in modal
+  const activeQuestions: McqQuestion[] = activeAssessment?.questions || [];
+  const currentQuestion: McqQuestion | undefined = activeQuestions[currentQIndex];
+  const activeAnsweredCount = Object.keys(answers).length;
+
   return (
     <div className="weekly-assessments-hub">
       {/* ── TOP KPI BANNER ── */}
@@ -182,19 +230,19 @@ export function WeeklyAssessmentsTab({
         <div className="kpi-banner-header">
           <div>
             <div className="sec-eyebrow" style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
-              <span className="live-dot" /> Enrolled Cohort Weekly Assignments
+              <span className="live-dot" /> Cohort Weekly MCQ Knowledge Assessments
             </div>
             <h2 style={{ margin: "4px 0 6px", fontSize: "1.35rem", fontWeight: 800 }}>
-              Practical Engineering Assessments
+              20-Question Multiple Choice Assessments
             </h2>
             <p style={{ margin: 0, color: "var(--muted)", fontSize: "0.88rem" }}>
-              Tailored to your enrolled programs. Work on hands-on deliverables, submit your code for review, and receive instructor marks.
+              Each weekly assessment contains 20 multiple choice questions with a 30-minute allocation to validate your foundational mastery and earn verifiable cohort grades.
             </p>
           </div>
           <div className="assessment-stat-pills">
             <div className="stat-pill">
               <span className="stat-val">{submittedCount}/{total}</span>
-              <span className="stat-lbl">Submitted</span>
+              <span className="stat-lbl">Completed</span>
             </div>
             <div className="stat-pill highlight">
               <span className="stat-val">{gradedCount > 0 ? `${scorePercent}%` : "Pending"}</span>
@@ -203,7 +251,7 @@ export function WeeklyAssessmentsTab({
           </div>
         </div>
 
-        {/* Dynamic Assignment Progress Bar */}
+        {/* Dynamic Progress Bar */}
         <div className="assessment-progress-wrapper" style={{ marginTop: 18 }}>
           <div className="progress-track" style={{ height: "8px" }}>
             <div
@@ -215,13 +263,13 @@ export function WeeklyAssessmentsTab({
             />
           </div>
           <div className="progress-meta" style={{ marginTop: 6, fontSize: "0.78rem" }}>
-            <span>{submittedCount} of {total} weekly assignments submitted ({total > 0 ? Math.round((submittedCount / total) * 100) : 0}%)</span>
-            <span>{gradedCount} certified instructor reviews completed</span>
+            <span>{submittedCount} of {total} weekly MCQ assessments completed ({total > 0 ? Math.round((submittedCount / total) * 100) : 0}%)</span>
+            <span>20 Questions per assessment &middot; Automated instant evaluation</span>
           </div>
         </div>
       </div>
 
-      {/* ── COURSE TRACK FILTER BAR (If student is enrolled in multiple programs) ── */}
+      {/* ── COURSE TRACK FILTER BAR ── */}
       {enrolledCourses.length > 1 && (
         <div className="course-filter-bar" style={{ margin: "18px 0 6px", display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
           <span style={{ fontSize: "0.82rem", fontWeight: 700, color: "var(--muted)" }}>Filter by Program:</span>
@@ -288,8 +336,10 @@ export function WeeklyAssessmentsTab({
         <div className="assessments-stack" style={{ display: "flex", flexDirection: "column", gap: 18 }}>
           {filtered.map((assessment) => {
             const submission = submissionMap.get(assessment.id);
-            const isSubmitted = Boolean(submission);
-            const isGraded = submission?.status === "graded";
+            const isCompleted = Boolean(submission && submission.status === "graded");
+            const score = submission?.score ?? 0;
+            const correctCount = submission?.correct_count ?? Math.round((score / 100) * (assessment.questions?.length || 20));
+            const passed = score >= (assessment.passing_points || 70);
             const deadline = formatTimeRemaining(assessment.due_date);
 
             return (
@@ -300,11 +350,14 @@ export function WeeklyAssessmentsTab({
                     <span className="badge-week">Week {assessment.week_number}</span>
                     <span className="badge-course-track">{assessment.course_title}</span>
                     <span className="badge-difficulty">{assessment.difficulty}</span>
-                    <span className="badge-points">{assessment.max_points} Points</span>
+                    <span className="badge-points" style={{ background: "rgba(26, 111, 232, 0.1)", color: "var(--blue)" }}>
+                      20 MCQs &middot; 30 Mins
+                    </span>
+                    <span className="badge-points">Pass: {assessment.passing_points || 70}%</span>
                   </div>
                   <div className="assessment-deadline-pill">
                     <Icon name="clock" size={14} />
-                    <span className={deadline.overdue && !isSubmitted ? "text-danger" : ""}>
+                    <span className={deadline.overdue && !isCompleted ? "text-danger" : ""}>
                       Due: {displayDate(assessment.due_date)} &middot; {deadline.label}
                     </span>
                   </div>
@@ -320,11 +373,11 @@ export function WeeklyAssessmentsTab({
                   </p>
                 </div>
 
-                {/* Objectives */}
+                {/* Topics Tested / Objectives */}
                 {assessment.objectives && assessment.objectives.length > 0 && (
-                  <div className="assessment-section-box">
+                  <div className="assessment-section-box" style={{ marginTop: 14 }}>
                     <strong style={{ display: "block", fontSize: "0.8rem", textTransform: "uppercase", letterSpacing: "0.05em", color: "var(--muted)", marginBottom: 6 }}>
-                      Key Engineering Objectives
+                      Core Competencies &amp; Knowledge Areas Evaluated (20 Questions)
                     </strong>
                     <ul style={{ margin: 0, paddingLeft: 18, fontSize: "0.86rem", color: "var(--ink-secondary)" }}>
                       {assessment.objectives.map((obj, i) => (
@@ -334,112 +387,68 @@ export function WeeklyAssessmentsTab({
                   </div>
                 )}
 
-                {/* Deliverables */}
-                {assessment.deliverables && assessment.deliverables.length > 0 && (
-                  <div className="assessment-section-box" style={{ marginTop: 10 }}>
-                    <strong style={{ display: "block", fontSize: "0.8rem", textTransform: "uppercase", letterSpacing: "0.05em", color: "var(--muted)", marginBottom: 6 }}>
-                      Required Deliverables
-                    </strong>
-                    <ul style={{ margin: 0, paddingLeft: 18, fontSize: "0.86rem", color: "var(--ink-secondary)" }}>
-                      {assessment.deliverables.map((del, i) => (
-                        <li key={i} style={{ marginBottom: 4 }}>{del}</li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-
-                {/* Starter Repo Link */}
-                {assessment.starter_repo_url && (
-                  <div style={{ marginTop: 12, display: "flex", alignItems: "center", gap: 8 }}>
-                    <Icon name="git-branch" size={15} />
-                    <span style={{ fontSize: "0.84rem", color: "var(--muted)" }}>Starter Laboratory Code:</span>
-                    <a
-                      href={assessment.starter_repo_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="assessment-repo-link"
-                      style={{ fontSize: "0.84rem", fontWeight: 700, color: "var(--blue)" }}
-                    >
-                      {assessment.starter_repo_url.replace("https://github.com/", "")} &rarr;
-                    </a>
-                  </div>
-                )}
-
-                {/* Submission & Grading Status Footer */}
+                {/* Status Footer */}
                 <div className="assessment-footer-bar" style={{ marginTop: 18, paddingTop: 16, borderTop: "1px solid var(--line)" }}>
-                  {submission && isGraded ? (
+                  {isCompleted ? (
                     <div className="graded-summary-box">
                       <div className="graded-header">
-                        <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-                          <span className="grade-badge grade-badge-success">
-                            <Icon name="check" size={14} /> Evaluation Completed
+                        <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+                          <span className={`grade-badge ${passed ? "grade-badge-success" : "grade-badge-warning"}`}>
+                            <Icon name={passed ? "check" : "target"} size={14} />
+                            {passed ? "Assessment Passed" : "Needs Retake"}
                           </span>
                           <span className="grade-score-pill">
-                            Score: <strong>{submission.score}</strong> / {assessment.max_points}
+                            Score: <strong>{correctCount} / 20</strong> ({score}%)
                           </span>
-                          {submission.grade && (
+                          {submission?.grade && (
                             <span className="grade-letter-pill">Grade: {submission.grade}</span>
                           )}
                         </div>
                         <span style={{ fontSize: "0.76rem", color: "var(--muted)" }}>
-                          Graded on {displayDate(submission.graded_at || submission.submitted_at)}
+                          Completed on {displayDate(submission?.graded_at || submission?.submitted_at || "")}
                         </span>
                       </div>
-                      {submission.feedback && (
-                        <div className="grade-feedback-text">
-                          <strong>Instructor Review &amp; Code Feedback:</strong>
+
+                      {submission?.feedback && (
+                        <div className="grade-feedback-text" style={{ marginTop: 10 }}>
+                          <strong>Evaluation Result:</strong>
                           <p style={{ margin: "4px 0 0" }}>{submission.feedback}</p>
                         </div>
                       )}
-                      <div style={{ marginTop: 10, display: "flex", gap: 14, fontSize: "0.8rem" }}>
-                        <a href={submission.github_url} target="_blank" rel="noopener noreferrer" style={{ color: "var(--blue)", fontWeight: 700 }}>
-                          View Submitted Repository &rarr;
-                        </a>
-                        {submission.demo_url && (
-                          <a href={submission.demo_url} target="_blank" rel="noopener noreferrer" style={{ color: "var(--blue)", fontWeight: 700 }}>
-                            View Demo Link &rarr;
-                          </a>
-                        )}
-                      </div>
-                    </div>
-                  ) : submission && isSubmitted ? (
-                    <div className="submitted-status-box">
-                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10 }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                          <span className="status-pill status-pill-pending">
-                            <span className="status-dot status-dot-pending" /> Under Review
-                          </span>
-                          <span style={{ fontSize: "0.84rem", color: "var(--muted)" }}>
-                            Submitted on {displayDate(submission.submitted_at)}
-                          </span>
-                        </div>
+
+                      <div style={{ marginTop: 14, display: "flex", gap: 10, flexWrap: "wrap" }}>
                         <button
                           type="button"
                           className="btn btn-secondary btn-sm"
-                          onClick={() => openSubmitModal(assessment)}
+                          onClick={() => openReviewModal(assessment)}
                         >
-                          Update Submission
+                          <Icon name="check" size={14} /> Review 20 Questions &amp; Answers
                         </button>
-                      </div>
-                      <div style={{ marginTop: 8, fontSize: "0.8rem", color: "var(--muted)" }}>
-                        Repo: <a href={submission.github_url} target="_blank" rel="noopener noreferrer" style={{ color: "var(--blue)" }}>{submission.github_url}</a>
+                        <button
+                          type="button"
+                          className="btn btn-orange btn-sm"
+                          onClick={() => openTakeModal(assessment)}
+                        >
+                          <Icon name="spark" size={14} /> Retake Assessment
+                        </button>
                       </div>
                     </div>
                   ) : (
                     <div className="unsubmitted-status-box">
                       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10 }}>
                         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                          <span className="status-pill status-pill-unsubmitted">Not Submitted</span>
+                          <span className="status-pill status-pill-unsubmitted">Not Attempted</span>
                           <span style={{ fontSize: "0.84rem", color: "var(--muted)" }}>
-                            Pass threshold: {assessment.passing_points} pts
+                            20 Multiple Choice Questions &middot; 30 Minutes
                           </span>
                         </div>
                         <button
                           type="button"
                           className="btn btn-orange btn-sm"
-                          onClick={() => openSubmitModal(assessment)}
+                          onClick={() => openTakeModal(assessment)}
                         >
-                          Submit Weekly Assignment <Icon name="arrow" size={14} />
+                          <span>Start 20-Question Assessment</span>
+                          <Icon name="arrow" size={14} />
                         </button>
                       </div>
                     </div>
@@ -451,84 +460,441 @@ export function WeeklyAssessmentsTab({
         </div>
       )}
 
-      {/* ── SUBMISSION MODAL ── */}
-      {submittingAssessment && (
-        <div className="modal-backdrop" onClick={() => !submitting && setSubmittingAssessment(null)}>
-          <div className="modal-card submission-modal-card" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
+      {/* ── 20-QUESTION MCQ INTERACTIVE MODAL (TAKE & REVIEW) ── */}
+      {activeAssessment && (
+        <div className="modal-backdrop" onClick={() => !submitting && setActiveAssessment(null)}>
+          <div
+            className="modal-card modal-card-lg mcq-modal-card"
+            onClick={(e) => e.stopPropagation()}
+            style={{ maxWidth: 840, padding: "24px 28px" }}
+          >
+            {/* Modal Header */}
+            <div className="modal-header" style={{ paddingBottom: 14, borderBottom: "1px solid var(--line)" }}>
               <div>
-                <span className="sec-eyebrow">Weekly Assignment Submission</span>
-                <h3 style={{ margin: "2px 0 0", fontSize: "1.2rem", fontWeight: 800 }}>
-                  {submittingAssessment.title}
+                <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginBottom: 4 }}>
+                  <span className="badge-week">Week {activeAssessment.week_number}</span>
+                  <span className="badge-course-track">{activeAssessment.course_title}</span>
+                  <span className="badge-points" style={{ background: "rgba(26, 111, 232, 0.1)", color: "var(--blue)" }}>
+                    20 Questions &middot; 30 Mins
+                  </span>
+                  {modalMode === "review" && (
+                    <span className="badge-difficulty" style={{ background: "rgba(22, 163, 74, 0.15)", color: "#15803d" }}>
+                      Review Mode
+                    </span>
+                  )}
+                </div>
+                <h3 style={{ margin: 0, fontSize: "1.25rem", fontWeight: 800 }}>
+                  {activeAssessment.title}
                 </h3>
-                <span style={{ fontSize: "0.82rem", color: "var(--blue)", fontWeight: 700 }}>
-                  {submittingAssessment.course_title}
-                </span>
               </div>
               <button
                 type="button"
                 className="modal-close-btn"
-                onClick={() => !submitting && setSubmittingAssessment(null)}
+                onClick={() => !submitting && setActiveAssessment(null)}
                 aria-label="Close modal"
               >
                 &times;
               </button>
             </div>
 
-            <form onSubmit={handleSubmission} style={{ marginTop: 16 }}>
-              {formError && <div className="form-error" role="alert" style={{ marginBottom: 14 }}>{formError}</div>}
-              {formSuccess && <div className="form-success" role="status" style={{ marginBottom: 14 }}>{formSuccess}</div>}
-
-              <div className="field">
-                <label htmlFor="github-url">GitHub Repository or Solution URL *</label>
-                <input
-                  id="github-url"
-                  type="url"
-                  placeholder="https://github.com/your-username/week-assignment"
-                  value={githubUrl}
-                  onChange={(e) => setGithubUrl(e.target.value)}
-                  required
-                />
-                <span className="field-hint">Public repository or accessible Git repository URL</span>
-              </div>
-
-              <div className="field" style={{ marginTop: 12 }}>
-                <label htmlFor="demo-url">Live Deployment / Demo Link (Optional)</label>
-                <input
-                  id="demo-url"
-                  type="url"
-                  placeholder="https://your-deployment.vercel.app"
-                  value={demoUrl}
-                  onChange={(e) => setDemoUrl(e.target.value)}
-                />
-              </div>
-
-              <div className="field" style={{ marginTop: 12 }}>
-                <label htmlFor="notes">Implementation Notes &amp; Reflection</label>
-                <textarea
-                  id="notes"
-                  rows={4}
-                  placeholder="Summarize your approach, key decisions, tests conducted, or questions for the mentor..."
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  maxLength={1000}
-                />
-                <span className="field-hint" style={{ textAlign: "right", display: "block" }}>
-                  {notes.length}/1000 characters
-                </span>
-              </div>
-
-              <div className="modal-actions" style={{ marginTop: 20 }}>
-                <button
-                  type="submit"
-                  className="btn btn-orange"
-                  disabled={submitting}
-                  style={{ width: "100%", justifyContent: "center" }}
+            {/* If submission success overlay is showing */}
+            {submissionSuccess ? (
+              <div style={{ padding: "32px 16px", textAlign: "center" }}>
+                <div
+                  style={{
+                    width: 68,
+                    height: 68,
+                    borderRadius: "50%",
+                    background: submissionSuccess.passed ? "rgba(22, 163, 74, 0.15)" : "rgba(234, 88, 12, 0.15)",
+                    color: submissionSuccess.passed ? "#16a34a" : "#ea580c",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    margin: "0 auto 16px",
+                  }}
                 >
-                  {submitting ? "Uploading Submission..." : "Confirm & Submit Assignment"}
-                </button>
+                  <Icon name={submissionSuccess.passed ? "check" : "target"} size={36} />
+                </div>
+                <h3 style={{ fontSize: "1.45rem", fontWeight: 800, margin: "0 0 8px" }}>
+                  {submissionSuccess.passed ? "Assessment Passed Successfully!" : "Assessment Completed"}
+                </h3>
+                <p style={{ color: "var(--muted)", fontSize: "0.95rem", maxWidth: 480, margin: "0 auto 20px" }}>
+                  {submissionSuccess.passed
+                    ? "Great job! Your answers have been evaluated and your certified score has been recorded."
+                    : "You completed all 20 questions. Review the concepts below and retake the assessment to reach the 70% passing threshold."}
+                </p>
+
+                <div
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 20,
+                    background: "var(--surface-2)",
+                    padding: "14px 28px",
+                    borderRadius: 12,
+                    marginBottom: 24,
+                  }}
+                >
+                  <div>
+                    <span style={{ fontSize: "0.75rem", color: "var(--muted)", textTransform: "uppercase", fontWeight: 700, display: "block" }}>
+                      Score
+                    </span>
+                    <strong style={{ fontSize: "1.6rem", color: "var(--ink)" }}>
+                      {submissionSuccess.correctCount} / {submissionSuccess.total}
+                    </strong>
+                  </div>
+                  <div style={{ width: 1, height: 36, background: "var(--line)" }} />
+                  <div>
+                    <span style={{ fontSize: "0.75rem", color: "var(--muted)", textTransform: "uppercase", fontWeight: 700, display: "block" }}>
+                      Percentage
+                    </span>
+                    <strong style={{ fontSize: "1.6rem", color: submissionSuccess.passed ? "#16a34a" : "#ea580c" }}>
+                      {submissionSuccess.score}%
+                    </strong>
+                  </div>
+                  <div style={{ width: 1, height: 36, background: "var(--line)" }} />
+                  <div>
+                    <span style={{ fontSize: "0.75rem", color: "var(--muted)", textTransform: "uppercase", fontWeight: 700, display: "block" }}>
+                      Grade
+                    </span>
+                    <strong style={{ fontSize: "1.6rem", color: "var(--blue)" }}>
+                      {submissionSuccess.grade}
+                    </strong>
+                  </div>
+                </div>
+
+                <div style={{ display: "flex", justifyContent: "center", gap: 12, flexWrap: "wrap" }}>
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={() => {
+                      setSubmissionSuccess(null);
+                      setModalMode("review");
+                      setCurrentQIndex(0);
+                    }}
+                  >
+                    <Icon name="check" size={15} /> Review Answers &amp; Explanations
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-orange"
+                    onClick={() => {
+                      setActiveAssessment(null);
+                      setSubmissionSuccess(null);
+                    }}
+                  >
+                    Done &amp; Return to Dashboard
+                  </button>
+                </div>
               </div>
-            </form>
+            ) : (
+              <div>
+                {errorMsg && (
+                  <div className="form-error" role="alert" style={{ margin: "14px 0 0" }}>
+                    {errorMsg}
+                  </div>
+                )}
+
+                {/* ── 20-QUESTION NAVIGATOR STRIP ── */}
+                <div style={{ margin: "16px 0 18px" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                    <span style={{ fontSize: "0.8rem", fontWeight: 700, color: "var(--muted)", textTransform: "uppercase", letterSpacing: "0.04em" }}>
+                      {modalMode === "review" ? "Question Review (20 Total)" : `Question Navigator: ${activeAnsweredCount} of 20 Answered`}
+                    </span>
+                    <span style={{ fontSize: "0.8rem", fontWeight: 700, color: "var(--blue)" }}>
+                      Question {currentQIndex + 1} of 20
+                    </span>
+                  </div>
+
+                  <div
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns: "repeat(10, 1fr)",
+                      gap: 6,
+                    }}
+                  >
+                    {activeQuestions.map((q, idx) => {
+                      const isCurrent = idx === currentQIndex;
+                      const isAnswered = typeof answers[q.id.toString()] === "number";
+                      const studentPick = answers[q.id.toString()];
+                      const isCorrect = studentPick === q.correct_answer;
+
+                      let bg = "var(--surface-2)";
+                      let color = "var(--ink)";
+                      let borderColor = "var(--line)";
+
+                      if (modalMode === "review") {
+                        if (isCorrect) {
+                          bg = "rgba(22, 163, 74, 0.15)";
+                          color = "#15803d";
+                          borderColor = "#16a34a";
+                        } else {
+                          bg = "rgba(239, 68, 68, 0.15)";
+                          color = "#b91c1c";
+                          borderColor = "#ef4444";
+                        }
+                      } else if (isAnswered) {
+                        bg = "rgba(26, 111, 232, 0.15)";
+                        color = "var(--blue)";
+                        borderColor = "var(--blue)";
+                      }
+
+                      if (isCurrent) {
+                        borderColor = "var(--orange)";
+                      }
+
+                      return (
+                        <button
+                          key={q.id}
+                          type="button"
+                          onClick={() => setCurrentQIndex(idx)}
+                          style={{
+                            height: 34,
+                            padding: 0,
+                            borderRadius: 6,
+                            border: `1.5px solid ${isCurrent ? "var(--orange)" : borderColor}`,
+                            background: isCurrent ? (modalMode === "review" ? bg : "var(--orange-soft)") : bg,
+                            color: isCurrent ? "var(--orange-dark)" : color,
+                            fontWeight: isCurrent ? 800 : 700,
+                            fontSize: "0.82rem",
+                            cursor: "pointer",
+                            transition: "all 0.15s ease",
+                          }}
+                          title={`Jump to Question ${idx + 1}${modalMode === "review" ? (isCorrect ? " (Correct)" : " (Incorrect)") : (isAnswered ? " (Answered)" : " (Unanswered)")}`}
+                        >
+                          {idx + 1}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* ── QUESTION DISPLAY CARD ── */}
+                {currentQuestion && (
+                  <div
+                    style={{
+                      background: "var(--surface)",
+                      border: "1px solid var(--line)",
+                      borderRadius: 12,
+                      padding: "20px 22px",
+                      marginTop: 12,
+                    }}
+                  >
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+                      <span
+                        style={{
+                          fontSize: "0.8rem",
+                          fontWeight: 800,
+                          color: "var(--blue)",
+                          textTransform: "uppercase",
+                          letterSpacing: "0.05em",
+                        }}
+                      >
+                        Question {currentQIndex + 1} of 20
+                      </span>
+                      {modalMode === "review" && (
+                        <span
+                          style={{
+                            fontSize: "0.78rem",
+                            fontWeight: 800,
+                            padding: "3px 10px",
+                            borderRadius: 99,
+                            background:
+                              answers[currentQuestion.id.toString()] === currentQuestion.correct_answer
+                                ? "rgba(22, 163, 74, 0.15)"
+                                : "rgba(239, 68, 68, 0.15)",
+                            color:
+                              answers[currentQuestion.id.toString()] === currentQuestion.correct_answer
+                                ? "#15803d"
+                                : "#b91c1c",
+                          }}
+                        >
+                          {answers[currentQuestion.id.toString()] === currentQuestion.correct_answer
+                            ? "Correct (+5 pts)"
+                            : "Incorrect (0 pts)"}
+                        </span>
+                      )}
+                    </div>
+
+                    <h4
+                      style={{
+                        fontSize: "1.08rem",
+                        fontWeight: 700,
+                        lineHeight: 1.5,
+                        margin: "0 0 18px",
+                        color: "var(--ink)",
+                      }}
+                    >
+                      {currentQuestion.question}
+                    </h4>
+
+                    {/* 4 Options */}
+                    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                      {currentQuestion.options.map((optText, optIdx) => {
+                        const letter = String.fromCharCode(65 + optIdx); // A, B, C, D
+                        const isSelected = answers[currentQuestion.id.toString()] === optIdx;
+                        const isCorrect = currentQuestion.correct_answer === optIdx;
+
+                        let optBorder = "var(--line)";
+                        let optBg = "var(--white)";
+                        let badgeColor = "var(--muted)";
+                        let badgeBg = "var(--surface-2)";
+
+                        if (modalMode === "review") {
+                          if (isCorrect) {
+                            optBorder = "#16a34a";
+                            optBg = "rgba(22, 163, 74, 0.08)";
+                            badgeBg = "#16a34a";
+                            badgeColor = "#ffffff";
+                          } else if (isSelected && !isCorrect) {
+                            optBorder = "#ef4444";
+                            optBg = "rgba(239, 68, 68, 0.08)";
+                            badgeBg = "#ef4444";
+                            badgeColor = "#ffffff";
+                          }
+                        } else if (isSelected) {
+                          optBorder = "var(--orange)";
+                          optBg = "rgba(255, 107, 0, 0.06)";
+                          badgeBg = "var(--orange)";
+                          badgeColor = "#ffffff";
+                        }
+
+                        return (
+                          <div
+                            key={optIdx}
+                            onClick={() => handleSelectOption(currentQuestion.id, optIdx)}
+                            style={{
+                              display: "flex",
+                              alignItems: "flex-start",
+                              gap: 12,
+                              padding: "12px 16px",
+                              borderRadius: 10,
+                              border: `1.5px solid ${optBorder}`,
+                              background: optBg,
+                              cursor: modalMode === "review" ? "default" : "pointer",
+                              transition: "all 0.15s ease",
+                            }}
+                          >
+                            <span
+                              style={{
+                                width: 26,
+                                height: 26,
+                                borderRadius: "50%",
+                                background: badgeBg,
+                                color: badgeColor,
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                fontSize: "0.8rem",
+                                fontWeight: 800,
+                                flexShrink: 0,
+                                marginTop: 1,
+                              }}
+                            >
+                              {letter}
+                            </span>
+                            <div style={{ flex: 1, fontSize: "0.92rem", lineHeight: 1.45, color: "var(--ink)" }}>
+                              {optText}
+                            </div>
+                            {modalMode === "review" && (
+                              <div style={{ flexShrink: 0 }}>
+                                {isCorrect && (
+                                  <span style={{ fontSize: "0.78rem", fontWeight: 800, color: "#16a34a" }}>
+                                    ✓ Correct Answer
+                                  </span>
+                                )}
+                                {isSelected && !isCorrect && (
+                                  <span style={{ fontSize: "0.78rem", fontWeight: 800, color: "#ef4444" }}>
+                                    ✗ Your Selection
+                                  </span>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    {/* Review Explanation */}
+                    {modalMode === "review" && currentQuestion.explanation && (
+                      <div
+                        style={{
+                          marginTop: 16,
+                          padding: "12px 16px",
+                          borderRadius: 8,
+                          background: "rgba(26, 111, 232, 0.08)",
+                          borderLeft: "4px solid var(--blue)",
+                        }}
+                      >
+                        <strong style={{ display: "block", fontSize: "0.8rem", color: "var(--blue)", marginBottom: 4 }}>
+                          Concept &amp; Explanation:
+                        </strong>
+                        <p style={{ margin: 0, fontSize: "0.86rem", color: "var(--ink-secondary)", lineHeight: 1.5 }}>
+                          {currentQuestion.explanation}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* ── MODAL FOOTER CONTROLS ── */}
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    marginTop: 20,
+                    paddingTop: 16,
+                    borderTop: "1px solid var(--line)",
+                    flexWrap: "wrap",
+                    gap: 10,
+                  }}
+                >
+                  <div style={{ display: "flex", gap: 8 }}>
+                    <button
+                      type="button"
+                      className="btn btn-secondary btn-sm"
+                      onClick={() => setCurrentQIndex((prev) => Math.max(0, prev - 1))}
+                      disabled={currentQIndex === 0}
+                    >
+                      &larr; Previous Question
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-secondary btn-sm"
+                      onClick={() => setCurrentQIndex((prev) => Math.min(activeQuestions.length - 1, prev + 1))}
+                      disabled={currentQIndex === activeQuestions.length - 1}
+                    >
+                      Next Question &rarr;
+                    </button>
+                  </div>
+
+                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                    {modalMode === "review" ? (
+                      <button
+                        type="button"
+                        className="btn btn-orange btn-sm"
+                        onClick={() => openTakeModal(activeAssessment)}
+                      >
+                        <Icon name="spark" size={14} /> Retake Assessment
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        className="btn btn-orange btn-sm"
+                        onClick={handleSubmitAssessment}
+                        disabled={submitting}
+                      >
+                        <Icon name="check" size={14} />
+                        {submitting
+                          ? "Grading 20 Questions..."
+                          : `Submit Assessment (${activeAnsweredCount}/20)`}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}

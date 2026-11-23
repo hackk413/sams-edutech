@@ -109,8 +109,6 @@ export function AdminPanel({
   });
   const [newDesc, setNewDesc] = useState("");
   const [newObjectives, setNewObjectives] = useState("Map target attack surface\nExecute defensive audit");
-  const [newDeliverables, setNewDeliverables] = useState("GitHub repository with code\nPDF summary of findings");
-  const [newRepoUrl, setNewRepoUrl] = useState("");
 
   // Edit Assessment state
   const [editingAssessment, setEditingAssessment] = useState<WeeklyAssessment | null>(null);
@@ -123,8 +121,6 @@ export function AdminPanel({
   const [editDueDate, setEditDueDate] = useState("");
   const [editDesc, setEditDesc] = useState("");
   const [editObjectives, setEditObjectives] = useState("");
-  const [editDeliverables, setEditDeliverables] = useState("");
-  const [editRepoUrl, setEditRepoUrl] = useState("");
   const [updatingAssessment, setUpdatingAssessment] = useState(false);
   const [editAssessmentError, setEditAssessmentError] = useState("");
 
@@ -152,6 +148,7 @@ export function AdminPanel({
   // Submissions & Grading state
   const [submissions, setSubmissions] = useState<AssessmentSubmission[]>(initialSubmissions);
   const [gradingSubmission, setGradingSubmission] = useState<AssessmentSubmission | null>(null);
+  const [inspectingSubmission, setInspectingSubmission] = useState<AssessmentSubmission | null>(null);
   const [gradeScore, setGradeScore] = useState<number>(90);
   const [gradeLetter, setGradeLetter] = useState("A+");
   const [gradeFeedback, setGradeFeedback] = useState("");
@@ -354,8 +351,6 @@ export function AdminPanel({
           due_date: new Date(newDueDate).toISOString(),
           description: newDesc,
           objectives: newObjectives.split("\n").map((s) => s.trim()).filter(Boolean),
-          deliverables: newDeliverables.split("\n").map((s) => s.trim()).filter(Boolean),
-          starter_repo_url: newRepoUrl || null,
         }),
       });
       const data = await res.json();
@@ -396,8 +391,6 @@ export function AdminPanel({
     setEditDueDate(a.due_date ? a.due_date.slice(0, 10) : "");
     setEditDesc(a.description);
     setEditObjectives((a.objectives || []).join("\n"));
-    setEditDeliverables((a.deliverables || []).join("\n"));
-    setEditRepoUrl(a.starter_repo_url || "");
     setEditAssessmentError("");
   }
 
@@ -421,8 +414,6 @@ export function AdminPanel({
           due_date: new Date(editDueDate).toISOString(),
           description: editDesc,
           objectives: editObjectives.split("\n").map((s) => s.trim()).filter(Boolean),
-          deliverables: editDeliverables.split("\n").map((s) => s.trim()).filter(Boolean),
-          starter_repo_url: editRepoUrl || null,
         }),
       });
       const data = await res.json();
@@ -1079,16 +1070,6 @@ export function AdminPanel({
                         />
                       </div>
 
-                      <div className="field">
-                        <label>Starter Lab Repository URL (Optional)</label>
-                        <input
-                          type="url"
-                          placeholder="https://github.com/samsedutech-labs/starter"
-                          value={newRepoUrl}
-                          onChange={(e) => setNewRepoUrl(e.target.value)}
-                        />
-                      </div>
-
                       <div className="field full">
                         <label>Assessment Detailed Description *</label>
                         <textarea
@@ -1101,7 +1082,7 @@ export function AdminPanel({
                       </div>
 
                       <div className="field full">
-                        <label>Core Objectives (One per line)</label>
+                        <label>Core Objectives &amp; Tested Competencies (One per line)</label>
                         <textarea
                           rows={2}
                           value={newObjectives}
@@ -1110,12 +1091,14 @@ export function AdminPanel({
                       </div>
 
                       <div className="field full">
-                        <label>Required Deliverables (One per line)</label>
-                        <textarea
-                          rows={2}
-                          value={newDeliverables}
-                          onChange={(e) => setNewDeliverables(e.target.value)}
-                        />
+                        <div style={{ background: "rgba(26, 111, 232, 0.08)", padding: "12px 16px", borderRadius: 8, borderLeft: "4px solid var(--blue)" }}>
+                          <strong style={{ display: "block", fontSize: "0.82rem", color: "var(--blue)", marginBottom: 4 }}>
+                            Automated 20-Question MCQ Format
+                          </strong>
+                          <span style={{ fontSize: "0.82rem", color: "var(--ink-secondary)" }}>
+                            This assessment generates 20 multiple choice questions with four options each and automated scoring against a 70% passing threshold (30-minute allocation). No manual repository or file upload is required.
+                          </span>
+                        </div>
                       </div>
                     </div>
 
@@ -1237,42 +1220,34 @@ export function AdminPanel({
                         />
                       </div>
 
-                      <div className="field">
-                        <label>Starter Repository URL (optional)</label>
-                        <input
-                          type="url"
-                          placeholder="https://github.com/sams-edutech/starter-lab"
-                          value={editRepoUrl}
-                          onChange={(e) => setEditRepoUrl(e.target.value)}
-                        />
-                      </div>
-
                       <div className="field full">
                         <label>Problem Description &amp; Scenario *</label>
                         <textarea
-                          rows={4}
+                          rows={3}
                           value={editDesc}
                           onChange={(e) => setEditDesc(e.target.value)}
                           required
                         />
                       </div>
 
-                      <div className="field">
-                        <label>Key Learning Objectives (one per line)</label>
+                      <div className="field full">
+                        <label>Key Learning Objectives &amp; Knowledge Areas (one per line)</label>
                         <textarea
-                          rows={3}
+                          rows={2}
                           value={editObjectives}
                           onChange={(e) => setEditObjectives(e.target.value)}
                         />
                       </div>
 
-                      <div className="field">
-                        <label>Expected Deliverables (one per line)</label>
-                        <textarea
-                          rows={3}
-                          value={editDeliverables}
-                          onChange={(e) => setEditDeliverables(e.target.value)}
-                        />
+                      <div className="field full">
+                        <div style={{ background: "rgba(26, 111, 232, 0.08)", padding: "12px 16px", borderRadius: 8, borderLeft: "4px solid var(--blue)" }}>
+                          <strong style={{ display: "block", fontSize: "0.82rem", color: "var(--blue)", marginBottom: 4 }}>
+                            20 Multiple Choice Questions (30-Minute Allocation)
+                          </strong>
+                          <span style={{ fontSize: "0.82rem", color: "var(--ink-secondary)" }}>
+                            Evaluated automatically using the objective question bank and instant grading threshold (70% pass requirement).
+                          </span>
+                        </div>
                       </div>
                     </div>
 
@@ -1298,9 +1273,9 @@ export function AdminPanel({
           <div>
             <div className="section-bar" style={{ marginBottom: 18 }}>
               <div>
-                <h2 style={{ margin: 0, fontSize: "1.35rem", fontWeight: 800 }}>Student Submissions &amp; Grading Hub</h2>
+                <h2 style={{ margin: 0, fontSize: "1.35rem", fontWeight: 800 }}>Student Submissions &amp; MCQ Evaluation Hub</h2>
                 <p style={{ margin: 0, color: "var(--muted)", fontSize: "0.86rem" }}>
-                  Inspect student code, verify deliverables, assign verified grades, and publish encrypted mentor feedback.
+                  Review automated 20-question MCQ knowledge scores, inspect individual student choices, calibrate grades, and publish encrypted mentor feedback.
                 </p>
               </div>
 
@@ -1364,15 +1339,18 @@ export function AdminPanel({
                       <tr>
                         <th>Student Details</th>
                         <th>Weekly Assessment</th>
-                        <th>Solution Repository</th>
+                        <th>MCQ Score &amp; Status</th>
                         <th>Submitted At</th>
-                        <th>Evaluation</th>
+                        <th>Evaluation Status</th>
                         <th>Actions</th>
                       </tr>
                     </thead>
                     <tbody>
                       {filteredSubmissions.map((sub) => {
                         const parent = assessments.find((a) => a.id === sub.assessment_id);
+                        const correctCount = sub.correct_count ?? Math.round(((sub.score ?? 0) / 100) * 20);
+                        const passed = (sub.score ?? 0) >= (parent?.passing_points || 70);
+
                         return (
                           <tr key={sub.id}>
                             <td>
@@ -1387,48 +1365,59 @@ export function AdminPanel({
                             <td>
                               <strong>{parent?.title || sub.assessment_id}</strong>
                               <div className="small-hint">
-                                <span style={{ color: "var(--blue)", fontWeight: 700 }}>{parent?.course_title}</span> &middot; Max: {parent?.max_points || 100} pts
+                                <span style={{ color: "var(--blue)", fontWeight: 700 }}>{parent?.course_title}</span> &middot; 20 MCQs
                               </div>
                             </td>
                             <td>
-                              <a
-                                href={sub.github_url}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="btn btn-secondary btn-sm"
-                                style={{ display: "inline-flex", gap: 6, alignItems: "center" }}
-                              >
-                                <Icon name="arrow" size={12} /> View Code
-                              </a>
-                              {sub.demo_url && (
+                              <div>
+                                <span className="score-pill-grade" style={{ fontSize: "0.92rem", fontWeight: 800 }}>
+                                  {correctCount}/20 ({sub.score ?? 0}%)
+                                </span>
                                 <div style={{ marginTop: 4 }}>
-                                  <a href={sub.demo_url} target="_blank" rel="noreferrer" className="small-link">
-                                    Live Demo &rarr;
-                                  </a>
+                                  <span
+                                    className={`status-pill ${passed ? "status-pill-green" : "status-pill-orange"}`}
+                                    style={{ fontSize: "0.74rem", padding: "2px 8px" }}
+                                  >
+                                    Grade: {sub.grade || (passed ? "Pass" : "Needs Revision")}
+                                  </span>
                                 </div>
-                              )}
+                              </div>
                             </td>
                             <td>{displayDateTime(sub.submitted_at)}</td>
                             <td>
                               {sub.status === "graded" ? (
                                 <div>
-                                  <span className="score-pill-grade">
-                                    {sub.score}/{parent?.max_points || 100} ({sub.grade})
+                                  <span style={{ fontSize: "0.82rem", fontWeight: 700, color: "var(--ink)" }}>
+                                    {sub.graded_by || "MCQ Auto-Evaluation"}
                                   </span>
-                                  <div className="small-hint">by {sub.graded_by}</div>
+                                  {sub.feedback && (
+                                    <div className="small-hint" style={{ maxWidth: 220, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={sub.feedback}>
+                                      {sub.feedback}
+                                    </div>
+                                  )}
                                 </div>
                               ) : (
                                 <span className="status-pill status-pill-orange">Awaiting Review</span>
                               )}
                             </td>
                             <td>
-                              <button
-                                type="button"
-                                className="btn btn-orange btn-sm"
-                                onClick={() => openGradingModal(sub)}
-                              >
-                                {sub.status === "graded" ? "Re-grade" : "Grade & Feedback"}
-                              </button>
+                              <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                                <button
+                                  type="button"
+                                  className="btn btn-secondary btn-sm"
+                                  onClick={() => setInspectingSubmission(sub)}
+                                  title="Inspect student's answers to all 20 MCQs"
+                                >
+                                  Review Answers
+                                </button>
+                                <button
+                                  type="button"
+                                  className="btn btn-orange btn-sm"
+                                  onClick={() => openGradingModal(sub)}
+                                >
+                                  {sub.status === "graded" ? "Edit Grade" : "Grade"}
+                                </button>
+                              </div>
                             </td>
                           </tr>
                         );
@@ -1438,6 +1427,196 @@ export function AdminPanel({
                 </div>
               )}
             </div>
+
+            {/* MCQ STUDENT ANSWER REVIEW MODAL */}
+            {inspectingSubmission && (() => {
+              const parent = assessments.find((a) => a.id === inspectingSubmission.assessment_id);
+              const questions = parent?.questions || [];
+              const rawAnswers = inspectingSubmission.answers || {};
+              const correct = inspectingSubmission.correct_count ?? Math.round(((inspectingSubmission.score ?? 0) / 100) * (questions.length || 20));
+              const score = inspectingSubmission.score ?? 0;
+              const passed = score >= (parent?.passing_points || 70);
+
+              return (
+                <div className="modal-backdrop" onClick={() => setInspectingSubmission(null)}>
+                  <div
+                    className="modal-card modal-card-lg"
+                    onClick={(e) => e.stopPropagation()}
+                    style={{ maxWidth: 840, maxHeight: "90vh", overflowY: "auto", padding: "24px 28px" }}
+                  >
+                    <div className="modal-header" style={{ paddingBottom: 14, borderBottom: "1px solid var(--line)" }}>
+                      <div>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                          <span className="badge-week">Week {parent?.week_number || 1}</span>
+                          <span className="badge-course-track">{parent?.course_title}</span>
+                          <span className="badge-points" style={{ background: "rgba(26, 111, 232, 0.1)", color: "var(--blue)" }}>
+                            20 Multiple Choice Questions
+                          </span>
+                        </div>
+                        <h3 style={{ margin: 0, fontSize: "1.25rem", fontWeight: 800 }}>
+                          Student MCQ Answers: {inspectingSubmission.student_name}
+                        </h3>
+                        <div className="small-hint">{inspectingSubmission.student_email}</div>
+                      </div>
+                      <button
+                        type="button"
+                        className="modal-close-btn"
+                        onClick={() => setInspectingSubmission(null)}
+                        aria-label="Close"
+                      >
+                        &times;
+                      </button>
+                    </div>
+
+                    {/* Summary KPI Banner */}
+                    <div
+                      style={{
+                        margin: "18px 0",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        padding: "14px 20px",
+                        background: "var(--surface-2)",
+                        borderRadius: 10,
+                        flexWrap: "wrap",
+                        gap: 12,
+                      }}
+                    >
+                      <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                        <span style={{ fontSize: "1.2rem", fontWeight: 800 }}>
+                          Score: {correct} / {questions.length || 20} ({score}%)
+                        </span>
+                        <span
+                          className={`status-pill ${passed ? "status-pill-green" : "status-pill-orange"}`}
+                          style={{ fontSize: "0.8rem", padding: "3px 10px" }}
+                        >
+                          Grade: {inspectingSubmission.grade || (passed ? "Pass" : "Needs Revision")}
+                        </span>
+                      </div>
+                      <span style={{ fontSize: "0.8rem", color: "var(--muted)" }}>
+                        Submitted {displayDateTime(inspectingSubmission.submitted_at)}
+                      </span>
+                    </div>
+
+                    {/* 20 Questions Inspection List */}
+                    <div style={{ display: "flex", flexDirection: "column", gap: 14, maxHeight: "55vh", overflowY: "auto", paddingRight: 4 }}>
+                      {questions.length === 0 ? (
+                        <p style={{ color: "var(--muted)", textAlign: "center", padding: 20 }}>
+                          No question data available for this assessment.
+                        </p>
+                      ) : (
+                        questions.map((q, idx) => {
+                          const studentChoice = rawAnswers[q.id.toString()];
+                          const hasAnswered = typeof studentChoice === "number";
+                          const isCorrect = studentChoice === q.correct_answer;
+
+                          return (
+                            <div
+                              key={q.id}
+                              style={{
+                                border: `1.5px solid ${!hasAnswered ? "var(--line)" : isCorrect ? "rgba(22, 163, 74, 0.3)" : "rgba(239, 68, 68, 0.3)"}`,
+                                borderRadius: 10,
+                                padding: "14px 18px",
+                                background: !hasAnswered ? "var(--surface)" : isCorrect ? "rgba(22, 163, 74, 0.04)" : "rgba(239, 68, 68, 0.04)",
+                              }}
+                            >
+                              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                                <strong style={{ fontSize: "0.85rem", color: "var(--blue)" }}>
+                                  Question {idx + 1} of {questions.length}
+                                </strong>
+                                <span
+                                  style={{
+                                    fontSize: "0.76rem",
+                                    fontWeight: 800,
+                                    padding: "2px 8px",
+                                    borderRadius: 6,
+                                    background: isCorrect ? "rgba(22, 163, 74, 0.15)" : "rgba(239, 68, 68, 0.15)",
+                                    color: isCorrect ? "#15803d" : "#b91c1c",
+                                  }}
+                                >
+                                  {isCorrect ? "✓ Correct (+5 pts)" : "✗ Incorrect (0 pts)"}
+                                </span>
+                              </div>
+
+                              <p style={{ margin: "0 0 10px", fontSize: "0.92rem", fontWeight: 600, color: "var(--ink)" }}>
+                                {q.question}
+                              </p>
+
+                              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                                {q.options.map((opt, optIdx) => {
+                                  const letter = String.fromCharCode(65 + optIdx);
+                                  const isOptCorrect = optIdx === q.correct_answer;
+                                  const isOptChosen = studentChoice === optIdx;
+
+                                  let optBg = "var(--white)";
+                                  let optBorder = "var(--line)";
+                                  if (isOptCorrect) {
+                                    optBg = "rgba(22, 163, 74, 0.1)";
+                                    optBorder = "#16a34a";
+                                  } else if (isOptChosen && !isOptCorrect) {
+                                    optBg = "rgba(239, 68, 68, 0.1)";
+                                    optBorder = "#ef4444";
+                                  }
+
+                                  return (
+                                    <div
+                                      key={optIdx}
+                                      style={{
+                                        display: "flex",
+                                        alignItems: "center",
+                                        justifyContent: "space-between",
+                                        padding: "8px 12px",
+                                        borderRadius: 6,
+                                        border: `1px solid ${optBorder}`,
+                                        background: optBg,
+                                        fontSize: "0.86rem",
+                                      }}
+                                    >
+                                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                                        <strong style={{ color: "var(--muted)", width: 18 }}>[{letter}]</strong>
+                                        <span style={{ color: "var(--ink)" }}>{opt}</span>
+                                      </div>
+                                      <div>
+                                        {isOptCorrect && (
+                                          <span style={{ fontSize: "0.74rem", fontWeight: 800, color: "#16a34a" }}>
+                                            ✓ Correct
+                                          </span>
+                                        )}
+                                        {isOptChosen && !isOptCorrect && (
+                                          <span style={{ fontSize: "0.74rem", fontWeight: 800, color: "#ef4444" }}>
+                                            ✗ Student Choice
+                                          </span>
+                                        )}
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+
+                              {q.explanation && (
+                                <div style={{ marginTop: 8, fontSize: "0.8rem", color: "var(--muted)", fontStyle: "italic" }}>
+                                  Explanation: {q.explanation}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })
+                      )}
+                    </div>
+
+                    <div style={{ marginTop: 18, textAlign: "right" }}>
+                      <button
+                        type="button"
+                        className="btn btn-secondary"
+                        onClick={() => setInspectingSubmission(null)}
+                      >
+                        Close Review
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
 
             {/* GRADING DIALOG */}
             {gradingSubmission && (

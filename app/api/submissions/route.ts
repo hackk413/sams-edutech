@@ -13,13 +13,12 @@ export async function POST(request: NextRequest) {
       user_id,
       student_name,
       student_email,
-      github_url,
-      demo_url,
+      answers,
       notes,
     } = body;
 
-    if (!assessment_id || !github_url) {
-      return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+    if (!assessment_id || !answers || typeof answers !== "object") {
+      return NextResponse.json({ error: "Assessment ID and question answers are required." }, { status: 400 });
     }
 
     // Ensure student ID matches authenticated user if signed in
@@ -32,8 +31,7 @@ export async function POST(request: NextRequest) {
       user_id: effectiveUserId,
       student_name: effectiveName,
       student_email: effectiveEmail,
-      github_url,
-      demo_url: demo_url || null,
+      answers,
       notes: notes || null,
     });
 
