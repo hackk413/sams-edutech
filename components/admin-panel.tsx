@@ -799,7 +799,7 @@ export function AdminPanel({
               <div className="section-bar" style={{ marginBottom: 16 }}>
                 <div>
                   <h3 style={{ margin: 0, fontSize: "1.15rem", fontWeight: 800 }}>Recent Student Submissions</h3>
-                  <p style={{ margin: 0, color: "var(--muted)", fontSize: "0.84rem" }}>Latest assignments submitted by cohort members</p>
+                  <p style={{ margin: 0, color: "var(--muted)", fontSize: "0.84rem" }}>Latest assessments submitted by cohort members</p>
                 </div>
                 <button
                   type="button"
@@ -867,7 +867,7 @@ export function AdminPanel({
               <div>
                 <h2 style={{ margin: 0, fontSize: "1.35rem", fontWeight: 800 }}>Weekly Assessment Manager</h2>
                 <p style={{ margin: 0, color: "var(--muted)", fontSize: "0.86rem" }}>
-                  Create and publish weekly assignments for student cohorts. Published assessments appear instantaneously on the student dashboard.
+                  Create and publish weekly assessments for student cohorts. Published assessments appear instantaneously on the student dashboard.
                 </p>
               </div>
               <button
@@ -1710,7 +1710,7 @@ export function AdminPanel({
               <div>
                 <h2 style={{ margin: 0, fontSize: "1.35rem", fontWeight: 800 }}>Student Profiles &amp; Cohort Directory</h2>
                 <p style={{ margin: 0, color: "var(--muted)", fontSize: "0.86rem" }}>
-                  Complete access to all student profiles, enrollment progress, submitted assignments, and certified performance records.
+                  Complete access to all student profiles, enrollment progress, submitted assessments, and certified performance records.
                 </p>
               </div>
 
@@ -1742,7 +1742,7 @@ export function AdminPanel({
                         <th>Student Identity</th>
                         <th>Role &amp; Verification</th>
                         <th>Enrolled Programs</th>
-                        <th>Assignments</th>
+                        <th>Assessments</th>
                         <th>Average Score</th>
                         <th>Actions</th>
                       </tr>

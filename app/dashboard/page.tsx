@@ -191,19 +191,19 @@ export default async function DashboardPage({
 
               <div className="kpi-grid">
                 <div className="kpi">
-                  <span className="num">{enrolledCourses.length > 0 ? studentAssessments.length : 0}</span>
-                  <span className="label">Weekly Assignments</span>
-                  <span className="hint">{studentSubmissions.length} submitted</span>
+                  <div className="num">{enrolledCourses.length > 0 ? studentAssessments.length : 0}</div>
+                  <div className="label">Weekly Assessments</div>
+                  <div className="hint">{studentSubmissions.length} submitted</div>
                 </div>
                 <div className="kpi">
-                  <span className="num">{typedEnrollments.length}</span>
-                  <span className="label">Enrolled Programs</span>
-                  <span className="hint">Active course library</span>
+                  <div className="num">{typedEnrollments.length}</div>
+                  <div className="label">Enrolled Programs</div>
+                  <div className="hint">Active course library</div>
                 </div>
                 <div className="kpi">
-                  <span className="num">{completed}</span>
-                  <span className="label">Certificates Earned</span>
-                  <span className="hint">Programs completed</span>
+                  <div className="num">{completed}</div>
+                  <div className="label">Certificates Earned</div>
+                  <div className="hint">Programs completed</div>
                 </div>
               </div>
             </div>
@@ -367,9 +367,9 @@ export default async function DashboardPage({
 
             <div className="card side-card">
               <div className="eyebrow">Cohort Status</div>
-              <div className="side-metric"><span>Weekly assignments</span><strong>{weeklyAssessments.length}</strong></div>
-              <div className="side-metric"><span>Submitted labs</span><strong>{studentSubmissions.length}</strong></div>
-              <div className="side-metric"><span>Average progress</span><strong>{average}%</strong></div>
+              <div className="side-metric"><span>Weekly assessments</span>{" "}<strong>{weeklyAssessments.length}</strong></div>
+              <div className="side-metric"><span>Submitted assessments</span>{" "}<strong>{studentSubmissions.length}</strong></div>
+              <div className="side-metric"><span>Average progress</span>{" "}<strong>{average}%</strong></div>
             </div>
           </aside>
         </div>

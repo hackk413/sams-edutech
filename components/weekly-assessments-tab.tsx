@@ -241,12 +241,12 @@ export function WeeklyAssessmentsTab({
           </div>
           <div className="assessment-stat-pills">
             <div className="stat-pill">
-              <span className="stat-val">{submittedCount}/{total}</span>
-              <span className="stat-lbl">Completed</span>
+              <div className="stat-val">{submittedCount}/{total}</div>
+              <div className="stat-lbl">Completed</div>
             </div>
             <div className="stat-pill highlight">
-              <span className="stat-val">{gradedCount > 0 ? `${scorePercent}%` : "Pending"}</span>
-              <span className="stat-lbl">Average Score</span>
+              <div className="stat-val">{gradedCount > 0 ? `${scorePercent}%` : "Pending"}</div>
+              <div className="stat-lbl">Average Score</div>
             </div>
           </div>
         </div>

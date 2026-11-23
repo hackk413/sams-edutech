@@ -215,7 +215,7 @@ export default async function HomePage() {
               {
                 icon: "grid",
                 title: "Purpose-Built Student Hub",
-                copy: "Resume your learning instantly without clutter. All assignments, progress metrics, and recordings stay organized.",
+                copy: "Resume your learning instantly without clutter. All assessments, progress metrics, and recordings stay organized.",
               },
               {
                 icon: "target",
