@@ -206,7 +206,7 @@ export function AvatarUploader({ profileId, initialAvatarUrl, displayName }: Ava
           {compressStats && (
             <div className="avatar-compress-badge">
               <Icon name="check" size={13} />
-              <span>Original: {compressStats.originalKb} KB &rarr; Optimized: <strong>{compressStats.compressedKb} KB</strong></span>
+              <span>Original: {compressStats.originalKb} KB &rarr; Optimized:{" "}<strong>{compressStats.compressedKb} KB</strong></span>
             </div>
           )}
         </div>

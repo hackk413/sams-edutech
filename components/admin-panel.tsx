@@ -935,7 +935,7 @@ export function AdminPanel({
                             <div className="small-hint">{a.course_title}</div>
                           </td>
                           <td><span className="badge-difficulty">{a.difficulty}</span></td>
-                          <td><strong>{a.max_points}</strong> pts</td>
+                          <td><strong>{a.max_points}</strong>{" "}pts</td>
                           <td>{displayDate(a.due_date)}</td>
                           <td><span className="pill-sub-count">{count} submitted</span></td>
                           <td>
@@ -1788,7 +1788,7 @@ export function AdminPanel({
                             )}
                           </td>
                           <td>
-                            <strong>{st.submissions_count}</strong> submitted
+                            <strong>{st.submissions_count}</strong>{" "}submitted
                             <div className="small-hint">{st.graded_count} graded</div>
                           </td>
                           <td>
@@ -2407,7 +2407,7 @@ export function AdminPanel({
                             onChange={() => setEditAutoEnroll(false)}
                             style={{ marginTop: 3 }}
                           />
-                          <span><strong>Manual Approval (Recommended &bull; 100% Anti-Fraud)</strong> &mdash; Keep course locked until you cross-check bank app/SMS and click Confirm. Zero risk of fake UTR brute-forcing.</span>
+                          <span><strong>Manual Approval (Recommended &bull; 100% Anti-Fraud)</strong>{" "}&mdash; Keep course locked until you cross-check bank app/SMS and click Confirm. Zero risk of fake UTR brute-forcing.</span>
                         </label>
                         <label style={{ display: "flex", alignItems: "flex-start", gap: 8, fontSize: "0.8rem", cursor: "pointer" }}>
                           <input
@@ -2417,7 +2417,7 @@ export function AdminPanel({
                             onChange={() => setEditAutoEnroll(true)}
                             style={{ marginTop: 3 }}
                           />
-                          <span><strong>Instant Auto-Enroll Mode</strong> &mdash; Course unlocks immediately on 12-digit UTR submission. Requires manual audits or bank webhook to catch forged reference numbers.</span>
+                          <span><strong>Instant Auto-Enroll Mode</strong>{" "}&mdash; Course unlocks immediately on 12-digit UTR submission. Requires manual audits or bank webhook to catch forged reference numbers.</span>
                         </label>
                       </div>
                     </div>

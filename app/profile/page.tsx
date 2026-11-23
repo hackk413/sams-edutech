@@ -122,8 +122,8 @@ export default async function ProfilePage() {
               </div>
             ) : (
               <div className="empty">
-                <strong>No courses enrolled yet.</strong>
-                <span>Browse the catalog to build your learning library.</span>
+                <strong style={{ display: "block", marginBottom: 6, fontSize: "1.05rem" }}>No courses enrolled yet.</strong>
+                <span style={{ display: "block", color: "var(--muted)" }}>Browse the catalog to build your learning library.</span>
                 <div style={{ marginTop: 12 }}>
                   <Link className="btn btn-orange" href="/courses">Explore courses <Icon name="arrow" size={15} /></Link>
                 </div>

@@ -58,7 +58,7 @@ export function CourseCatalog({ courses, enrolledIds }: { courses: Course[]; enr
 
       <div className="catalog-summary">
         <div>
-          <strong>{filtered.length}</strong> course{filtered.length === 1 ? "" : "s"} available &middot; <span className="catalog-summary-muted">Self-paced &middot; Enroll free</span>
+          <strong>{filtered.length}</strong>{" "}course{filtered.length === 1 ? "" : "s"}{" "}available &middot;{" "}<span className="catalog-summary-muted">Self-paced &middot; Enroll free</span>
         </div>
         <div className="view-mode-toggle" aria-label="View layout switcher">
           <button
@@ -97,8 +97,8 @@ export function CourseCatalog({ courses, enrolledIds }: { courses: Course[]; enr
       ) : (
         <div className="card empty-state">
           <div className="empty-icon"><Icon name="search" size={22} /></div>
-          <strong>No courses match those filters</strong>
-          <span>Try another topic, level or category. Your filters stay local to this page.</span>
+          <strong style={{ display: "block", marginBottom: 6, fontSize: "1.05rem" }}>No courses match those filters</strong>
+          <span style={{ display: "block", marginBottom: 12 }}>Try another topic, level or category. Your filters stay local to this page.</span>
           <button
             className="btn btn-secondary"
             type="button"

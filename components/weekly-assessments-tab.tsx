@@ -204,7 +204,7 @@ export function WeeklyAssessmentsTab({
 
           <div className="enrollment-motivation-card">
             <p className="enrollment-callout-text">
-              ✨ Take the first step toward your tech career — <strong>enroll in an active specialization today</strong> to unlock weekly 20-question MCQ knowledge assessments, automated evaluations, and verified marks!
+              ✨ Take the first step toward your tech career &mdash;{" "}<strong>enroll in an active specialization today</strong>{" "}to unlock weekly 20-question MCQ knowledge assessments, automated evaluations, and verified marks!
             </p>
             <div className="enrollment-quote-box">
               <blockquote className="enrollment-quote">
@@ -398,7 +398,7 @@ export function WeeklyAssessmentsTab({
                             {passed ? "Assessment Passed" : "Needs Retake"}
                           </span>
                           <span className="grade-score-pill">
-                            Score: <strong>{correctCount} / 20</strong> ({score}%)
+                            Score:{" "}<strong>{correctCount} / 20</strong>{" "}({score}%)
                           </span>
                           {submission?.grade && (
                             <span className="grade-letter-pill">Grade: {submission.grade}</span>

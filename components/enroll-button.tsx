@@ -314,15 +314,15 @@ export function EnrollButton({ courseId, courseTitle, price = 23999, enrolled }:
             <div className="upi-instructions-box">
               <div className="upi-step">
                 <span className="step-num">1</span>
-                <span>Scan official bank QR or tap &apos;Pay with UPI App&apos; and transfer <strong>&#8377;{price.toLocaleString("en-IN")}</strong></span>
+                <span>Scan official bank QR or tap &apos;Pay with UPI App&apos; and transfer{" "}<strong>&#8377;{price.toLocaleString("en-IN")}</strong></span>
               </div>
               <div className="upi-step">
                 <span className="step-num">2</span>
-                <span>Copy the <strong>12-digit UTR / UPI Ref Number</strong> from your payment receipt</span>
+                <span>Copy the{" "}<strong>12-digit UTR / UPI Ref Number</strong>{" "}from your payment receipt</span>
               </div>
               <div className="upi-step">
                 <span className="step-num">3</span>
-                <span>Paste the 12-digit UTR below &mdash; our system matches your transfer to <strong>{courseTitle}</strong></span>
+                <span>Paste the 12-digit UTR below &mdash; our system matches your transfer to{" "}<strong>{courseTitle}</strong></span>
               </div>
             </div>
 

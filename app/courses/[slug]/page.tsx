@@ -179,19 +179,19 @@ export default async function CourseDetailPage({ params }: { params: Promise<{ s
               <div className="course-stats" style={{ margin: "20px 0" }}>
                 <div className="course-stat">
                   <Icon name="book" size={17} />
-                  <strong>{typedCourse.lessons_count}</strong> lessons with live code files
+                  <strong>{typedCourse.lessons_count}</strong>{" "}lessons with live code files
                 </div>
                 <div className="course-stat">
                   <Icon name="clock" size={17} />
-                  <strong>{typedCourse.duration_hours}h</strong> structured learning effort
+                  <strong>{typedCourse.duration_hours}h</strong>{" "}structured learning effort
                 </div>
                 <div className="course-stat">
                   <Icon name="target" size={17} />
-                  <strong>{typedCourse.level}</strong> level path
+                  <strong>{typedCourse.level}</strong>{" "}level path
                 </div>
                 <div className="course-stat">
                   <Icon name="shield" size={17} />
-                  <strong>Govt &amp; Industry</strong> Aligned Certificate
+                  <strong>Govt &amp; Industry</strong>{" "}Aligned Certificate
                 </div>
               </div>
 

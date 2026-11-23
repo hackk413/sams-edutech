@@ -293,8 +293,8 @@ export default async function DashboardPage({
                 </div>
                 {typedEnrollments.length === 0 ? (
                   <div className="empty">
-                    <strong>Your learning library is empty.</strong>
-                    Browse our career tracks to enroll.
+                    <strong style={{ display: "block", marginBottom: 6, fontSize: "1.05rem" }}>Your learning library is empty.</strong>
+                    <span style={{ display: "block", color: "var(--muted)" }}>Browse our specialized career tracks to enroll and start learning.</span>
                     <div style={{ marginTop: 12 }}>
                       <Link href="/courses" className="btn btn-orange btn-sm">Explore programs <Icon name="arrow" size={13} /></Link>
                     </div>

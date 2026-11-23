@@ -1,15 +1,15 @@
 import type { Metadata, Viewport } from "next";
-import { Manrope } from "next/font/google";
+import { Inter } from "next/font/google";
 import { AppNav } from "@/components/app-nav";
 import { BrandLogo } from "@/components/brand-logo";
 import { CursorFollower } from "@/components/cursor-follower";
 import { Icon } from "@/components/icon";
 import "./globals.css";
 
-const manrope = Manrope({
+const inter = Inter({
   subsets: ["latin"],
   weight: ["400", "500", "600", "700", "800"],
-  variable: "--font-manrope",
+  variable: "--font-inter",
   display: "swap",
 });
 
@@ -40,15 +40,16 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" data-theme="light" suppressHydrationWarning className={manrope.variable}>
+    <html lang="en" data-theme="light" suppressHydrationWarning className={inter.variable}>
       <head>
         <link rel="icon" href="/symbol.png" type="image/png" />
         <link rel="shortcut icon" href="/favicon.ico" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        {/* Scoped certificate display fonts */}
         {/* eslint-disable-next-line @next/next/no-page-custom-font */}
         <link
-          href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Great+Vibes&family=Pinyon+Script&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Great+Vibes&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap"
           rel="stylesheet"
         />
         <script
@@ -57,7 +58,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
           }}
         />
       </head>
-      <body>
+      <body className={inter.className}>
         <CursorFollower />
         <div className="site-shell">
           <AppNav />
