@@ -1,7 +1,12 @@
 /** @type {import('next').NextConfig} */
-const supabaseHostname = process.env.NEXT_PUBLIC_SUPABASE_URL
-  ? new URL(process.env.NEXT_PUBLIC_SUPABASE_URL).hostname
-  : "*.supabase.co";
+let supabaseHostname = "*.supabase.co";
+try {
+  if (process.env.NEXT_PUBLIC_SUPABASE_URL) {
+    supabaseHostname = new URL(process.env.NEXT_PUBLIC_SUPABASE_URL).hostname;
+  }
+} catch {
+  supabaseHostname = "*.supabase.co";
+}
 
 const securityHeaders = [
   { key: "X-Content-Type-Options", value: "nosniff" },

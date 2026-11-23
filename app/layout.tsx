@@ -3,6 +3,7 @@ import { Manrope } from "next/font/google";
 import { AppNav } from "@/components/app-nav";
 import { BrandLogo } from "@/components/brand-logo";
 import { CursorFollower } from "@/components/cursor-follower";
+import { Icon } from "@/components/icon";
 import "./globals.css";
 
 const manrope = Manrope({
@@ -78,7 +79,22 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
                 </span>
               </div>
               <div className="footer-bottom-row">
-                <div>&copy; {new Date().getFullYear()} SAMS EDUTECH LLC. All rights reserved.</div>
+                <div>&copy; {new Date().getFullYear()} SAMS EDUTECH LLP. All rights reserved.</div>
+                <div className="footer-contact">
+                  <a
+                    href="mailto:info@samsedutech.com"
+                    style={{
+                      color: "var(--blue)",
+                      fontWeight: 700,
+                      textDecoration: "none",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 6,
+                    }}
+                  >
+                    <Icon name="mail" size={14} /> info@samsedutech.com
+                  </a>
+                </div>
                 <div className="footer-links">
                   <span>Self-Paced Learning</span>
                   <span>Verified Certifications</span>

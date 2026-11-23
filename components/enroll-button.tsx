@@ -174,7 +174,7 @@ export function EnrollButton({ courseId, courseTitle, price = 23999, enrolled }:
       const data = await res.json();
 
       if (!res.ok || !data.success) {
-        setErrorMessage(data.error || "Unable to register payment. Please retry or contact support.");
+        setErrorMessage(data.error || "Unable to register payment. Please retry or contact support at info@samsedutech.com.");
         setSubmitting(false);
         return;
       }
@@ -408,6 +408,13 @@ export function EnrollButton({ courseId, courseTitle, price = 23999, enrolled }:
 
                 <div className="security-guarantee">
                   <Icon name="shield" size={14} /> Direct UPI Transfer &bull; Zero Gateway Surcharge &bull; Verified by Faculty
+                </div>
+
+                <div style={{ marginTop: 10, fontSize: "0.76rem", color: "var(--muted)", textAlign: "center" }}>
+                  Need help? Contact support at{" "}
+                  <a href="mailto:info@samsedutech.com" style={{ color: "var(--blue)", fontWeight: 700 }}>
+                    info@samsedutech.com
+                  </a>
                 </div>
               </div>
             </form>
